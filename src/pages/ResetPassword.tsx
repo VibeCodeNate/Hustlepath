@@ -94,9 +94,20 @@ export function ResetPassword() {
 
             console.log('Attempting password update...');
 
-            const { data, error: updateError } = await supabase.auth.updateUser({
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000);
+            });
+
+            // Race between the update and timeout
+            const updatePromise = supabase.auth.updateUser({
                 password: password
             });
+
+            const { data, error: updateError } = await Promise.race([
+                updatePromise,
+                timeoutPromise.then(() => { throw new Error('Request timed out'); })
+            ]) as Awaited<typeof updatePromise>;
 
             console.log('Update result:', data, updateError);
 
@@ -124,7 +135,7 @@ export function ResetPassword() {
             }, 3000);
         } catch (err) {
             console.error('Password update error:', err);
-            setError(err instanceof Error ? err.message : 'Failed to reset password');
+            setError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
             setLoading(false);
         }
     };
