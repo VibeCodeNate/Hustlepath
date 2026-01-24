@@ -51,7 +51,7 @@ const MOCK_RESOURCES: Resource[] = [
     },
     {
         id: '9',
-        title: 'Marketing 101 for Developers',
+        title: 'How to set up your business in under 1 hour',
         description: 'How to get your first 100 users without paid ads.',
         type: 'video',
         url: 'https://www.youtube.com/watch?v=pfQL-M4lkdw&t=65s',
