@@ -92,18 +92,11 @@ export function ResetPassword() {
                 return;
             }
 
-            console.log('Refreshing session before update...');
-            const { error: refreshError } = await supabase.auth.refreshSession();
-            if (refreshError) {
-                console.warn('Session refresh warning:', refreshError);
-                // We continue anyway as the session might still be valid for the update
-            }
-
             console.log('Attempting password update...');
 
-            // Create a timeout promise
+            // Create a timeout promise to prevent infinite hangs
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000);
+                setTimeout(() => reject(new Error('TIMEOUT')), 10000); // 10s timeout
             });
 
             // Race between the update and timeout
@@ -113,7 +106,7 @@ export function ResetPassword() {
 
             const { data, error: updateError } = await Promise.race([
                 updatePromise,
-                timeoutPromise.then(() => { throw new Error('Request timed out'); })
+                timeoutPromise.then(() => { throw new Error('TIMEOUT'); })
             ]) as Awaited<typeof updatePromise>;
 
             console.log('Update result:', data, updateError);
@@ -140,9 +133,16 @@ export function ResetPassword() {
             setTimeout(() => {
                 navigate('/signup');
             }, 3000);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Password update error:', err);
-            setError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
+
+            // Handle timeout specifically
+            if (err.message === 'TIMEOUT' || err.message?.includes('timed out')) {
+                setError('Connection timed out. Your reset link may have expired. Please request a new one.');
+            } else {
+                setError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
+            }
+
             setLoading(false);
         }
     };
