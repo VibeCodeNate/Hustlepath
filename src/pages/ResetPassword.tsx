@@ -30,39 +30,64 @@ export function ResetPassword() {
             return;
         }
 
+        let mounted = true;
+
+        // Safety timeout - IF verify logic hangs, force stop loading after 5s
+        const safetyTimer = setTimeout(() => {
+            if (mounted && initialLoading) {
+                console.warn('Reset verification timed out, forcing UI load');
+                setInitialLoading(false);
+            }
+        }, 5000);
+
         // Listen for auth state changes - Supabase handles the token automatically
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             console.log('Auth event:', event, 'Session:', !!session);
 
-            if (event === 'PASSWORD_RECOVERY') {
-                // Password recovery event - user clicked a valid reset link
-                setHasValidSession(true);
-                setInitialLoading(false);
-            } else if (event === 'SIGNED_IN' && session) {
-                // User is signed in (may have come from recovery)
-                setHasValidSession(true);
-                setInitialLoading(false);
-            } else if (event === 'INITIAL_SESSION') {
-                // Initial session check
-                if (session) {
+            if (mounted) {
+                if (event === 'PASSWORD_RECOVERY') {
                     setHasValidSession(true);
+                    setInitialLoading(false);
+                } else if (event === 'SIGNED_IN' && session) {
+                    setHasValidSession(true);
+                    setInitialLoading(false);
+                } else if (event === 'INITIAL_SESSION') {
+                    if (session) {
+                        setHasValidSession(true);
+                    }
+                    setInitialLoading(false);
                 }
-                setInitialLoading(false);
             }
         });
 
         // Also check for existing session after a short delay
         const timer = setTimeout(async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                setHasValidSession(true);
+            try {
+                // Use Promise.race to prevent getSession from hanging forever
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
+                    setTimeout(() => resolve({ data: { session: null } }), 3000)
+                );
+
+                const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+
+                if (mounted) {
+                    if (session) {
+                        setHasValidSession(true);
+                    }
+                    setInitialLoading(false);
+                }
+            } catch (err) {
+                console.error('Session check error:', err);
+                if (mounted) setInitialLoading(false);
             }
-            setInitialLoading(false);
-        }, 2000);
+        }, 1000);
 
         return () => {
+            mounted = false;
             subscription.unsubscribe();
             clearTimeout(timer);
+            clearTimeout(safetyTimer);
         };
     }, []);
 
