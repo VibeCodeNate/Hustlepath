@@ -92,6 +92,13 @@ export function ResetPassword() {
                 return;
             }
 
+            console.log('Refreshing session before update...');
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+                console.warn('Session refresh warning:', refreshError);
+                // We continue anyway as the session might still be valid for the update
+            }
+
             console.log('Attempting password update...');
 
             // Create a timeout promise
