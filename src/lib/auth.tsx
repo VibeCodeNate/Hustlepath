@@ -47,24 +47,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     const fetchProfile = async (userId: string) => {
-        const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+        try {
+            // Create a 5s timeout promise
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Profile fetch timed out')), 5000)
+            );
 
-        if (profileData) {
-            setProfile(profileData as Profile);
-        }
+            // Fetch profile with timeout
+            const profilePromise = supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
 
-        const { data: progressData } = await supabase
-            .from('user_progress')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
+            const { data: profileData } = await Promise.race([
+                profilePromise,
+                timeoutPromise
+            ]) as any;
 
-        if (progressData) {
-            setProgress(progressData as UserProgress);
+            if (profileData) {
+                setProfile(profileData as Profile);
+            }
+
+            // Fetch progress with timeout
+            const progressPromise = supabase
+                .from('user_progress')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            const { data: progressData } = await Promise.race([
+                progressPromise,
+                timeoutPromise
+            ]) as any;
+
+            if (progressData) {
+                setProgress(progressData as UserProgress);
+            }
+        } catch (error) {
+            console.warn('Error fetching profile/progress:', error);
+            // Don't block auth loading on profile errors
         }
     };
 
