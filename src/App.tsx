@@ -14,6 +14,7 @@ import { Roadmap } from './pages/Roadmap';
 import { CharacterPage } from './pages/CharacterPage';
 import { Community } from './pages/Community';
 import { Resources } from './pages/Resources';
+import { Settings } from './pages/Settings';
 
 function App() {
   return (
@@ -67,6 +68,11 @@ function App() {
             <Route path="/resources" element={
               <ProtectedRoute>
                 <Resources />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             } />
           </Routes>

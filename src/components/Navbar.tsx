@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
-import { Sparkles, User, LogOut } from 'lucide-react';
+import { Sparkles, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 
 export function Navbar() {
@@ -35,6 +35,13 @@ export function Navbar() {
                             >
                                 <User className="w-4 h-4" />
                                 <span className="hidden sm:inline">{profile?.username || 'Dashboard'}</span>
+                            </Link>
+                            <Link
+                                to="/settings"
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                title="Settings"
+                            >
+                                <Settings className="w-4 h-4" />
                             </Link>
                             <button
                                 onClick={handleSignOut}
