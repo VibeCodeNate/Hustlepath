@@ -4,8 +4,64 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
-import { ArrowLeft, Settings as SettingsIcon, User, Shield, Trash2, Eye, EyeOff, AlertTriangle, Check, Loader2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, User, Shield, Trash2, Eye, EyeOff, AlertTriangle, Check, Loader2, HelpCircle, Crown, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+function UpgradeButton() {
+    const [loading, setLoading] = useState(false);
+
+    const handleUpgrade = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                body: { hustleTitle: 'HustlePath Pro Upgrade' }
+            });
+
+            if (error) throw error;
+            if (data?.url) window.location.href = data.url;
+        } catch (err) {
+            console.error('Upgrade error:', err);
+            alert('Failed to start checkout.');
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Button onClick={handleUpgrade} disabled={loading} className="bg-yellow-400 text-black hover:bg-yellow-300">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Crown className="w-4 h-4 mr-2" />}
+            Upgrade to Pro
+        </Button>
+    );
+}
+
+function ManageSubscriptionButton({ email }: { email: string }) {
+    const [loading, setLoading] = useState(false);
+
+    const handlePortal = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('create-portal-session', {
+                body: { email }
+            });
+
+            if (error) throw error;
+            if (data?.url) window.location.href = data.url;
+        } catch (err: any) {
+            console.error('Portal error:', err);
+            // Fallback error message
+            const msg = err.message || 'Failed to open billing portal.';
+            alert(msg);
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Button onClick={handlePortal} disabled={loading} variant="outline" className="border-white/20 hover:bg-white/10">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CreditCard className="w-4 h-4 mr-2" />}
+            Manage Billing
+        </Button>
+    );
+}
 
 export function Settings() {
     const navigate = useNavigate();
@@ -182,6 +238,68 @@ export function Settings() {
                                     {showEmail ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </motion.section>
+
+                {/* Subscription Section */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 relative overflow-hidden"
+                >
+                    {profile?.is_pro && (
+                        <div className="absolute top-0 right-0 p-4 opacity-20 hover:opacity-100 transition-opacity">
+                            <Crown className="w-24 h-24 text-yellow-400 rotate-12" />
+                        </div>
+                    )}
+
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2 relative z-10">
+                        <CreditCard className="w-5 h-5 text-primary" />
+                        Subscription
+                    </h2>
+
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <p className="text-sm text-white/60 mb-1">Current Plan</p>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-xl font-bold ${profile?.is_pro ? 'text-yellow-400' : 'text-white'}`}>
+                                        {profile?.is_pro ? 'Pro Hustler' : 'Starter (Free)'}
+                                    </span>
+                                    {profile?.is_pro && (
+                                        <span className="px-2 py-0.5 bg-yellow-400/20 text-yellow-400 text-[10px] font-bold uppercase rounded tracking-wider">
+                                            Active
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {profile?.is_pro ? (
+                            <div className="bg-black/20 rounded-xl p-4 border border-white/5 mb-6">
+                                <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                                    Downgrade Warning
+                                </h3>
+                                <p className="text-sm text-white/60 mb-0">
+                                    Downgrading to the free tier will lock access to premium features, masterclasses, and advanced tools.
+                                    <br /><br />
+                                    <strong>Don't worry:</strong> Your progress and data will be safely saved if you decide to upgrade again later.
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-white/60 mb-6 max-w-lg">
+                                Unlock interactive roadmaps, video masterclasses, and priority community access.
+                            </p>
+                        )}
+
+                        <div className="flex gap-4">
+                            {profile?.is_pro ? (
+                                <ManageSubscriptionButton email={user?.email || ''} />
+                            ) : (
+                                <UpgradeButton />
+                            )}
                         </div>
                     </div>
                 </motion.section>

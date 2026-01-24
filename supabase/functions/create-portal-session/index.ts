@@ -1,4 +1,4 @@
-// Supabase Edge Function: create-checkout-session
+// Supabase Edge Function: create-portal-session
 // Deno runtime for Supabase Edge Functions
 
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
@@ -25,44 +25,33 @@ Deno.serve(async (req: Request) => {
             httpClient: Stripe.createFetchHttpClient(),
         });
 
-        // Get the origin from the request for redirect URLs
         const origin = req.headers.get('origin') || 'http://localhost:5173';
 
-        // Parse request body for optional metadata
-        let hustleTitle = 'HustlePath Pro';
-        try {
-            const body = await req.json();
-            if (body.hustleTitle) {
-                hustleTitle = body.hustleTitle;
-            }
-        } catch {
-            // No body or invalid JSON, use defaults
+        // Parse request body for email
+        // In a production app, we should get the email from the JWT (req.headers.get('Authorization'))
+        // For this MVP, we will accept it from the body to link the customer.
+        const { email } = await req.json();
+
+        if (!email) {
+            throw new Error('Email is required to find subscription');
         }
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: 'HustlePath Pro Access',
-                            description: `Full mission data unlock for: ${hustleTitle}`,
-                        },
-                        unit_amount: 500, // $5.00 in cents
-                        recurring: {
-                            interval: 'month',
-                        },
-                    },
-                    quantity: 1,
-                },
-            ],
-            mode: 'subscription',
-            success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/explainer`,
-            metadata: {
-                hustleTitle,
-            },
+        // 1. Find the customer by email
+        const customers = await stripe.customers.list({
+            email: email,
+            limit: 1,
+        });
+
+        if (customers.data.length === 0) {
+            throw new Error('No billing account found for this email. Have you upgraded to Pro yet?');
+        }
+
+        const customer = customers.data[0];
+
+        // 2. Create Portal Session
+        const session = await stripe.billingPortal.sessions.create({
+            customer: customer.id,
+            return_url: `${origin}/settings`,
         });
 
         return new Response(
@@ -72,8 +61,11 @@ Deno.serve(async (req: Request) => {
                 status: 200,
             }
         );
+
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Portal Error:', errorMessage);
+
         return new Response(
             JSON.stringify({ error: errorMessage }),
             {

@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../lib/auth';
+import { supabase } from '../lib/supabase';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { PricingCard } from '../components/PricingCard';
@@ -10,6 +13,47 @@ export function Landing() {
     const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const y2 = useTransform(scrollY, [0, 500], [0, -150]);
+
+    const { user, profile } = useAuth();
+    const [checkingOut, setCheckingOut] = useState(false);
+
+    const handleFreeCta = () => {
+        if (user) {
+            navigate('/dashboard');
+        } else {
+            navigate('/assessment');
+        }
+    };
+
+    const handleProCta = async () => {
+        if (user) {
+            if (profile?.is_pro) {
+                navigate('/dashboard');
+                return;
+            }
+
+            // User is logged in but not pro -> Checkout
+            setCheckingOut(true);
+            try {
+                // Use the same function as Explainer, passing a generic hustle title or specific product intent
+                const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                    body: { hustleTitle: 'HustlePath Pro Upgrade' }
+                });
+
+                if (error) throw error;
+                if (data?.url) {
+                    window.location.href = data.url;
+                }
+            } catch (err) {
+                console.error('Checkout error:', err);
+                alert('Failed to start checkout. Please try again.');
+                setCheckingOut(false);
+            }
+        } else {
+            // Not logged in -> Assessment (funnel start)
+            navigate('/assessment');
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background selection:bg-primary/20 overflow-x-hidden">
@@ -75,7 +119,7 @@ export function Landing() {
                     >
                         <div className="relative group">
                             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-green-400 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                            <Button size="lg" className="relative h-14 px-10 text-lg bg-black text-white border border-primary/50 hover:bg-primary hover:text-black transition-all" onClick={() => navigate('/assessment')}>
+                            <Button size="lg" className="relative h-14 px-10 text-lg bg-black text-white border border-primary/50 hover:bg-primary hover:text-black transition-all" onClick={handleFreeCta}>
                                 <Sparkles className="mr-2 h-5 w-5" />
                                 Start Engine
                             </Button>
@@ -197,7 +241,7 @@ export function Landing() {
                                 title="Starter"
                                 price="Free"
                                 ctaText="Start Assessment"
-                                onCtaClick={() => navigate('/assessment')}
+                                onCtaClick={handleFreeCta}
                                 features={[
                                     "Full Skill Assessment",
                                     "Top 3 Hustle Recommendations",
@@ -211,8 +255,8 @@ export function Landing() {
                                 title="Pro Hustler"
                                 price="$5"
                                 isPopular
-                                ctaText="Get Full Roadmap"
-                                onCtaClick={() => navigate('/assessment')}
+                                ctaText={checkingOut ? "Processing..." : "Get Full Roadmap"}
+                                onCtaClick={handleProCta}
                                 features={[
                                     "Everything in Free",
                                     "Interactive Weekly Roadmap",
@@ -226,6 +270,7 @@ export function Landing() {
                     </div>
                 </div>
             </section>
+
 
             {/* Footer */}
             <footer className="py-12 border-t border-white/5 bg-black">
