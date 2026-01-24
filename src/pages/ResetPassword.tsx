@@ -5,90 +5,35 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { motion } from 'framer-motion';
 import { Lock, ArrowRight, Loader2, CheckCircle, KeyRound, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useAuth } from '../lib/auth';
 
 export function ResetPassword() {
     const navigate = useNavigate();
+    // Use the global auth session instead of managing our own listeners
+    // This avoids race conditions where the session is consumed by one listener but not the other
+    const { session, loading: authLoading } = useAuth();
+
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [hasValidSession, setHasValidSession] = useState(false);
+
+    // Check if we have a valid session for password recovery
+    // The session is automatically handled by AuthProvider when it processes the URL hash
+    const hasValidSession = !!session;
 
     useEffect(() => {
-        // Check for errors in URL
+        // Check for URL errors (like expired links)
         const urlParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
         const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
         if (errorDescription) {
             setError(decodeURIComponent(errorDescription.replace(/\+/g, ' ')));
-            setInitialLoading(false);
-            return;
         }
-
-        let mounted = true;
-
-        // Safety timeout - IF verify logic hangs, force stop loading after 5s
-        const safetyTimer = setTimeout(() => {
-            if (mounted && initialLoading) {
-                console.warn('Reset verification timed out, forcing UI load');
-                setInitialLoading(false);
-            }
-        }, 5000);
-
-        // Listen for auth state changes - Supabase handles the token automatically
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('Auth event:', event, 'Session:', !!session);
-
-            if (mounted) {
-                if (event === 'PASSWORD_RECOVERY') {
-                    setHasValidSession(true);
-                    setInitialLoading(false);
-                } else if (event === 'SIGNED_IN' && session) {
-                    setHasValidSession(true);
-                    setInitialLoading(false);
-                } else if (event === 'INITIAL_SESSION') {
-                    if (session) {
-                        setHasValidSession(true);
-                    }
-                    setInitialLoading(false);
-                }
-            }
-        });
-
-        // Also check for existing session after a short delay
-        const timer = setTimeout(async () => {
-            try {
-                // Use Promise.race to prevent getSession from hanging forever
-                const sessionPromise = supabase.auth.getSession();
-                const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
-                    setTimeout(() => resolve({ data: { session: null } }), 3000)
-                );
-
-                const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-
-                if (mounted) {
-                    if (session) {
-                        setHasValidSession(true);
-                    }
-                    setInitialLoading(false);
-                }
-            } catch (err) {
-                console.error('Session check error:', err);
-                if (mounted) setInitialLoading(false);
-            }
-        }, 1000);
-
-        return () => {
-            mounted = false;
-            subscription.unsubscribe();
-            clearTimeout(timer);
-            clearTimeout(safetyTimer);
-        };
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -108,9 +53,6 @@ export function ResetPassword() {
         setLoading(true);
 
         try {
-            // Get current session first
-            const { data: { session } } = await supabase.auth.getSession();
-
             if (!session) {
                 setError('Your session has expired. Please request a new reset link.');
                 setLoading(false);
@@ -119,40 +61,20 @@ export function ResetPassword() {
 
             console.log('Attempting password update...');
 
-            // Create a timeout promise to prevent infinite hangs
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('TIMEOUT')), 10000); // 10s timeout
-            });
-
-            // Race between the update and timeout
-            const updatePromise = supabase.auth.updateUser({
+            // Just trust the update call - no fancy timeouts or manual refreshes
+            // We already have a valid session from useAuth()
+            const { error: updateError } = await supabase.auth.updateUser({
                 password: password
             });
 
-            const { data, error: updateError } = await Promise.race([
-                updatePromise,
-                timeoutPromise.then(() => { throw new Error('TIMEOUT'); })
-            ]) as Awaited<typeof updatePromise>;
-
-            console.log('Update result:', data, updateError);
-
             if (updateError) {
-                const errorMsg = updateError.message || 'Failed to update password';
-                if (errorMsg.toLowerCase().includes('same') || errorMsg.toLowerCase().includes('different')) {
-                    setError('New password must be different from your current password');
-                } else if (errorMsg.toLowerCase().includes('session') || errorMsg.toLowerCase().includes('token')) {
-                    setError('Your session has expired. Please request a new reset link.');
-                } else {
-                    setError(errorMsg);
-                }
-                setLoading(false);
-                return;
+                throw updateError;
             }
 
             setSuccess(true);
             setLoading(false);
 
-            // Sign out and redirect
+            // Sign out to force re-login with new password
             await supabase.auth.signOut();
 
             setTimeout(() => {
@@ -160,19 +82,13 @@ export function ResetPassword() {
             }, 3000);
         } catch (err: any) {
             console.error('Password update error:', err);
-
-            // Handle timeout specifically
-            if (err.message === 'TIMEOUT' || err.message?.includes('timed out')) {
-                setError('Connection timed out. Your reset link may have expired. Please request a new one.');
-            } else {
-                setError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
-            }
-
+            setError(err.message || 'Failed to reset password. Please try again.');
             setLoading(false);
         }
     };
 
-    if (initialLoading) {
+    // Show loading state while AuthProvider initializes
+    if (authLoading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center">
@@ -183,7 +99,35 @@ export function ResetPassword() {
         );
     }
 
-    // If there's an error and no valid session, show error state
+    // If no session and no error in URL, it might be an invalid link or direct navigation
+    if (!hasValidSession && !error) {
+        return (
+            <div className="min-h-screen bg-background">
+                <Navbar />
+                <div className="container mx-auto px-4 pt-32 pb-20">
+                    <div className="max-w-md mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center"
+                        >
+                            <AlertCircle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+                            <h2 className="text-2xl font-bold mb-2">Invalid or Expired Link</h2>
+                            <p className="text-white/60 mb-6">
+                                The password reset link appears to be invalid or expired.
+                                Please request a new one.
+                            </p>
+                            <Button onClick={() => navigate('/signup')}>
+                                Back to Login <ArrowRight className="ml-2" />
+                            </Button>
+                        </motion.div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
     if (error && !hasValidSession) {
         return (
             <div className="min-h-screen bg-background">
@@ -196,7 +140,7 @@ export function ResetPassword() {
                             className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center"
                         >
                             <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold mb-2">Reset Link Invalid</h2>
+                            <h2 className="text-2xl font-bold mb-2">Reset Link Error</h2>
                             <p className="text-white/60 mb-6">{error}</p>
                             <Button onClick={() => navigate('/signup')}>
                                 Back to Login <ArrowRight className="ml-2" />
