@@ -91,15 +91,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        let mounted = true;
+
+        // Global safety timeout
+        // If Supabase init takes longer than 8 seconds, force the app to load
+        // This prevents the "infinite spinner" verification issue
+        const safetyTimer = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn('Auth initialization timed out, forcing load');
+                setLoading(false);
+            }
+        }, 8000);
+
         // Get initial session
         const initSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                await fetchProfile(session.user.id);
+            try {
+                // Wrap getSession in a timeout race too
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
+                    setTimeout(() => resolve({ data: { session: null } }), 5000)
+                );
+
+                const { data: { session } } = await Promise.race([
+                    sessionPromise,
+                    timeoutPromise
+                ]) as any;
+
+                if (!mounted) return;
+
+                setSession(session);
+                setUser(session?.user ?? null);
+
+                if (session?.user) {
+                    await fetchProfile(session.user.id);
+                }
+            } catch (err) {
+                console.error('Auth init error:', err);
+            } finally {
+                if (mounted) setLoading(false);
             }
-            setLoading(false);
         };
 
         initSession();
@@ -107,19 +137,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
+                if (!mounted) return;
+
                 setSession(session);
                 setUser(session?.user ?? null);
+
                 if (session?.user) {
                     await fetchProfile(session.user.id);
                 } else {
                     setProfile(null);
                     setProgress(null);
                 }
+
                 setLoading(false);
             }
         );
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+            clearTimeout(safetyTimer);
+        };
     }, []);
 
     const signUp = async (email: string, password: string, username: string) => {
