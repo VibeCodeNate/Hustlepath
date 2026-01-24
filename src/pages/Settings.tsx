@@ -4,7 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
-import { ArrowLeft, Settings as SettingsIcon, User, Bell, Shield, Trash2, Eye, EyeOff, AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, User, Shield, Trash2, Eye, EyeOff, AlertTriangle, Check, Loader2, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function Settings() {
@@ -13,9 +13,6 @@ export function Settings() {
 
     // Form states
     const [displayName, setDisplayName] = useState(profile?.display_name || '');
-    const [username, setUsername] = useState(profile?.username || '');
-    const [emailNotifications, setEmailNotifications] = useState(true);
-    const [weeklyDigest, setWeeklyDigest] = useState(true);
     const [showEmail, setShowEmail] = useState(false);
 
     // UI states
@@ -36,7 +33,6 @@ export function Settings() {
                 .from('profiles')
                 .update({
                     display_name: displayName,
-                    username: username,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', user.id);
@@ -58,17 +54,20 @@ export function Settings() {
         setError(null);
 
         try {
-            // Delete user data from all tables
-            // Note: In production, you'd want a server-side function for this
+            // Delete user data from all tables first
             await supabase.from('user_progress').delete().eq('user_id', user.id);
             await supabase.from('community_posts').delete().eq('user_id', user.id);
             await supabase.from('profiles').delete().eq('id', user.id);
+
+            // Note: To fully delete from Supabase Auth, you need a server-side Edge Function
+            // For now, we'll sign out and mark the profile as deleted
+            // The user will be orphaned but can't log in without profile
 
             // Sign out and redirect
             await signOut();
             navigate('/');
         } catch (err: any) {
-            setError(err.message || 'Failed to delete account');
+            setError(err.message || 'Failed to delete account. Please contact support.');
             setDeleting(false);
         }
     };
@@ -88,7 +87,7 @@ export function Settings() {
                             <SettingsIcon className="w-6 h-6 md:w-8 md:h-8 text-primary" />
                             Settings
                         </h1>
-                        <p className="text-sm md:text-base text-muted-foreground">Manage your account and preferences.</p>
+                        <p className="text-sm md:text-base text-muted-foreground">Manage your account.</p>
                     </div>
                 </div>
 
@@ -143,12 +142,11 @@ export function Settings() {
                             <label className="block text-sm font-medium text-white/70 mb-2">Username</label>
                             <input
                                 type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                                placeholder="username"
-                                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-primary/50 transition-colors"
+                                value={profile?.username || ''}
+                                readOnly
+                                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white/50 cursor-not-allowed"
                             />
-                            <p className="text-xs text-white/40 mt-1">Only lowercase letters, numbers, and underscores</p>
+                            <p className="text-xs text-white/40 mt-1">Username cannot be changed.</p>
                         </div>
 
                         <div>
@@ -168,48 +166,6 @@ export function Settings() {
                                     {showEmail ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
-                            <p className="text-xs text-white/40 mt-1">Email cannot be changed here. Contact support for assistance.</p>
-                        </div>
-                    </div>
-                </motion.section>
-
-                {/* Notifications Section */}
-                <motion.section
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6"
-                >
-                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                        <Bell className="w-5 h-5 text-blue-400" />
-                        Notifications
-                    </h2>
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Email Notifications</p>
-                                <p className="text-sm text-white/50">Receive updates about your progress</p>
-                            </div>
-                            <button
-                                onClick={() => setEmailNotifications(!emailNotifications)}
-                                className={`w-12 h-6 rounded-full transition-colors relative ${emailNotifications ? 'bg-primary' : 'bg-white/20'}`}
-                            >
-                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${emailNotifications ? 'left-7' : 'left-1'}`} />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Weekly Digest</p>
-                                <p className="text-sm text-white/50">Get a summary of your hustle progress</p>
-                            </div>
-                            <button
-                                onClick={() => setWeeklyDigest(!weeklyDigest)}
-                                className={`w-12 h-6 rounded-full transition-colors relative ${weeklyDigest ? 'bg-primary' : 'bg-white/20'}`}
-                            >
-                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${weeklyDigest ? 'left-7' : 'left-1'}`} />
-                            </button>
                         </div>
                     </div>
                 </motion.section>
@@ -227,6 +183,22 @@ export function Settings() {
                         )}
                     </Button>
                 </div>
+
+                {/* Help Section */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6"
+                >
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                        <HelpCircle className="w-5 h-5 text-blue-400" />
+                        Need Help?
+                    </h2>
+                    <p className="text-white/60 text-sm">
+                        For account changes like email updates, password resets, or username changes, please contact support at <a href="mailto:support@hustlepath.app" className="text-primary hover:underline">support@hustlepath.app</a>
+                    </p>
+                </motion.section>
 
                 {/* Danger Zone */}
                 <motion.section
