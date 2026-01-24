@@ -11,9 +11,9 @@ const MOCK_RESOURCES: Resource[] = [
     {
         id: '1',
         title: 'The Ultimate Side Hustle Checklist',
-        description: 'A 20-point checklist to launch your business in 48 hours.',
-        type: 'pdf',
-        url: '#',
+        description: 'A comprehensive guide to launch your business, covering legal, product, and marketing.',
+        type: 'article',
+        url: 'https://www.ycombinator.com/library/4D-how-to-start-a-startup',
         isPremium: false
     },
     {
@@ -21,7 +21,7 @@ const MOCK_RESOURCES: Resource[] = [
         title: 'Finding Your Niche (Masterclass)',
         description: 'How to identify high-profit, low-competition markets.',
         type: 'video',
-        url: '#',
+        url: 'https://www.youtube.com/watch?v=FqB3PZ0M-Os', // Generic business video
         duration: '15:42',
         isPremium: false
     },
@@ -30,7 +30,32 @@ const MOCK_RESOURCES: Resource[] = [
         title: 'Top 10 Tools for Solo Founders',
         description: 'Software stack that saves me 20 hours a week.',
         type: 'article',
-        url: '#',
+        url: 'https://www.indiehackers.com/start',
+        isPremium: false
+    },
+    {
+        id: '7',
+        title: 'Revenue Projection Template',
+        description: 'Simple spreadsheet to forecast your first year of sales.',
+        type: 'tool',
+        url: 'https://docs.google.com/spreadsheets/u/0/create',
+        isPremium: false
+    },
+    {
+        id: '8',
+        title: 'Free Logo Maker',
+        description: 'Create a professional brand identity in minutes.',
+        type: 'tool',
+        url: 'https://www.canva.com/create/logos/',
+        isPremium: false
+    },
+    {
+        id: '9',
+        title: 'Marketing 101 for Developers',
+        description: 'How to get your first 100 users without paid ads.',
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=1KxJ2f3-1rA',
+        duration: '12:30',
         isPremium: false
     },
     {
