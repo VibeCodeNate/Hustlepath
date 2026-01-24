@@ -1,0 +1,353 @@
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Navbar } from '../components/Navbar';
+import { Button } from '../components/Button';
+import { openai } from '../lib/openai';
+import { fireConfetti } from '../lib/confetti';
+import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface Recommendation {
+    title: string;
+    description: string;
+    detailed_writeup: string;
+    difficulty_score: number;
+    income_score: number;
+    velocity_score: number;
+    match_score: number;
+    xp_value: number;
+    category: 'tech' | 'creative' | 'service' | 'biz';
+}
+
+export function Results() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const answers = location.state?.answers;
+
+    const [loading, setLoading] = useState(true);
+    const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [rerollsLeft, setRerollsLeft] = useState(1);
+    const [excludedTitles, setExcludedTitles] = useState<string[]>([]);
+
+    const fetchRecommendations = async (retryTitles: string[] = []) => {
+        setLoading(true);
+        try {
+            const prompt = `
+                Act as a video game quest giver and business consultant. Based on this profile, generate 3 "Side Hustle Quests" that are perfect matches.
+
+                User Profile:
+                - Capital: ${answers.capital}
+                - Time: ${answers.time}
+                - Goal: ${answers.goal}
+                - Interests: ${answers.interest}
+                - Tech Skill: ${answers.tech_level}
+                - Social: ${answers.social_preference}
+                - Hobbies: ${answers.hobbies}
+                - Frustration: ${answers.frustration}
+                - Vehicle Access: ${answers.vehicle}
+
+                ${retryTitles.length > 0 ? `CRITICAL: Do NOT include these previously suggested quests: ${retryTitles.join(', ')}` : ''}
+
+                You MUST select recommendations strictly from this pool of options (excluding any listed above), but tailor the title/angle to the user:
+                - Baking business / Custom Dessert Orders
+                - Digital products (E-books, Templates)
+                - Monetize a YouTube channel
+                - Start a blog or newsletter
+                - Secure social media sponsorships (UGC/Influencer)
+                - Record a podcast
+                - Participate in online surveys (Market Research)
+                - Get paid to test apps
+                - Become an affiliate marketer
+                - Start a dropshipping business
+                - Offer digital marketing services (Ads/Social Managment)
+                - Develop mobile apps
+                - Resell used or vintage goods (Flipping)
+                - Advise eco-friendly businesses (Consulting)
+                - Design and sell t-shirts (Print on Demand)
+                - Develop a clothing line
+                - Sell your photography
+                - Voice-over artist
+                - Virtual interior design consultation
+                - Create handmade goods (Etsy)
+                - IRL or online tutor
+                - Transcribe or translate content
+                - Teach fitness classes online
+                - Deliver packages (Amazon Flex/Courier)
+                - Deliver groceries (Instacart/DoorDash)
+                - Rent out your home or spare room (Airbnb)
+                - Ride-share driver (Uber/Lyft)
+                - Wash and detail cars (Mobile Detailing)
+                - Mow lawns / Landscaping
+                - Give neighborhood tours (Experiences)
+                - Pet-sitting and dog walking
+
+                Return a JSON array of 3 objects with these EXACT keys:
+                - title: "Quest Name" (e.g. "The Digital Artisan")
+                - description: One catchy hook sentence.
+                - detailed_writeup: A 2-3 sentence exciting pitch about why this is a wealth builder for THEM specifically.
+                - difficulty_score: Number 1-10 (1 = easy).
+                - income_score: Number 1-10 (10 = millionaire potential).
+                - velocity_score: Number 1-10 (10 = paid today).
+                - match_score: Number between 85 and 99.
+                - xp_value: Number between 300 and 1000.
+                - category: One of "tech", "creative", "service", "biz".
+                
+                Do not include markdown. Just raw JSON.
+            `;
+
+            const completion = await openai.chat.completions.create({
+                messages: [{ role: "user", content: prompt }],
+                model: "gpt-4o-mini",
+            });
+
+            const content = completion.choices[0].message.content;
+            if (content) {
+                const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
+                const newRecs = JSON.parse(cleanContent);
+                setRecommendations(newRecs);
+                // Add new titles to excluded list for future
+                setExcludedTitles(prev => [...prev, ...newRecs.map((r: any) => r.title)]);
+            } else {
+                throw new Error("No content received from AI");
+            }
+        } catch (err: any) {
+            console.error("AI Error:", err);
+            setError("Failed to generate quests. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!answers) {
+            navigate('/assessment');
+            return;
+        }
+        fetchRecommendations();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [answers, navigate]);
+
+    const handleReroll = () => {
+        if (rerollsLeft > 0) {
+            setRerollsLeft(prev => prev - 1);
+            fetchRecommendations(excludedTitles);
+        }
+    };
+
+    const handleStartQuest = (quest: Recommendation) => {
+        fireConfetti();
+        // Small delay to let confetti pop before nav
+        setTimeout(() => {
+            navigate('/explainer', { state: { hustle: quest, answers } });
+        }, 800);
+    };
+
+    if (!answers) return null;
+
+    const getCategoryIcon = (cat: string) => {
+        switch (cat) {
+            case 'tech': return <Cpu className="h-8 w-8 text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />;
+            case 'creative': return <Sparkles className="h-8 w-8 text-fuchsia-400 drop-shadow-[0_0_10px_rgba(232,121,249,0.8)]" />;
+            case 'service': return <Users className="h-8 w-8 text-orange-400 drop-shadow-[0_0_10px_rgba(251,146,60,0.8)]" />;
+            default: return <TrendingUp className="h-8 w-8 text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]" />;
+        }
+    };
+
+    const getCategoryColor = (cat: string) => {
+        switch (cat) {
+            case 'tech': return 'border-cyan-500/30 bg-cyan-500/5 hover:border-cyan-500/60';
+            case 'creative': return 'border-fuchsia-500/30 bg-fuchsia-500/5 hover:border-fuchsia-500/60';
+            case 'service': return 'border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60';
+            default: return 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/60';
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-background pb-20 overflow-x-hidden relative">
+            {/* Animated Background Particles */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                {[...Array(20)].map((_, i) => (
+                    <motion.div
+                        key={i}
+                        className="absolute bg-primary/10 rounded-full blur-xl"
+                        initial={{
+                            x: Math.random() * window.innerWidth,
+                            y: Math.random() * window.innerHeight,
+                            scale: Math.random() * 0.5 + 0.5,
+                            opacity: 0.1
+                        }}
+                        animate={{
+                            y: [null, Math.random() * window.innerHeight],
+                            x: [null, Math.random() * window.innerWidth],
+                            opacity: [0.1, 0.3, 0.1]
+                        }}
+                        transition={{
+                            duration: Math.random() * 20 + 10,
+                            repeat: Infinity,
+                            ease: "linear"
+                        }}
+                        style={{
+                            width: Math.random() * 200 + 50,
+                            height: Math.random() * 200 + 50,
+                        }}
+                    />
+                ))}
+            </div>
+
+            <Navbar />
+
+            <div className="container mx-auto px-4 pt-32 max-w-5xl relative z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center mb-10"
+                >
+                    <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-2 rounded-full text-sm font-bold mb-6 border border-primary/20 shadow-[0_0_20px_rgba(190,242,100,0.2)]">
+                        <Trophy className="h-5 w-5" />
+                        QUESTS AVAILABLE
+                    </div>
+                    <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
+                        Mission <span className="text-primary">Accepted.</span>
+                    </h1>
+                    <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+                        We analyzed your stats. Here are the 3 highest-value opportunities for your specific skill set.
+                    </p>
+                </motion.div>
+
+                {rerollsLeft > 0 && !loading && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex justify-center mb-10"
+                    >
+                        <Button
+                            variant="outline"
+                            onClick={handleReroll}
+                            className="bg-black/40 border-primary/30 text-primary hover:bg-primary/20 hover:border-primary"
+                        >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Reroll Quests ({rerollsLeft} Left)
+                        </Button>
+                    </motion.div>
+                )}
+
+                {loading ? (
+                    <div className="space-y-8">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="h-64 bg-white/5 rounded-3xl border border-white/5 animate-pulse" />
+                        ))}
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-12">
+                        <span className="text-red-500 font-bold text-xl">{error}</span>
+                        <Button className="mt-4" onClick={() => window.location.reload()}>Retry Mission</Button>
+                    </div>
+                ) : (
+                    <div className="grid gap-8">
+                        <AnimatePresence mode='wait'>
+                            {recommendations?.map((quest, idx) => (
+                                <motion.div
+                                    key={quest.title}
+                                    initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className={`relative rounded-3xl p-1 border backdrop-blur-sm transition-all duration-300 group ${getCategoryColor(quest.category)}`}
+                                >
+                                    {/* Star Badge for High Match */}
+                                    {quest.match_score > 90 && (
+                                        <div className="absolute -top-3 -right-3 z-20 bg-yellow-500 text-black font-bold p-2 px-3 rounded-full flex items-center gap-1 shadow-lg shadow-yellow-500/20 text-xs transform rotate-12">
+                                            <Star className="h-3 w-3 fill-black" />
+                                            Top Pick
+                                        </div>
+                                    )}
+
+                                    {/* LED Glow Effect */}
+                                    <div className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] ease-in-out`} style={{ transitionDuration: '1.5s' }} />
+
+                                    <div className="bg-card/80 rounded-[1.4rem] p-6 md:p-10 relative overflow-hidden h-full">
+                                        <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+                                            {/* Left Column: Icon & Score */}
+                                            <div className="flex-shrink-0 flex flex-row lg:flex-col items-center gap-4 lg:w-32 text-center">
+                                                <div className="h-20 w-20 rounded-2xl bg-black/40 flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-110 transition-transform duration-300">
+                                                    {getCategoryIcon(quest.category)}
+                                                </div>
+                                                <div className="relative">
+                                                    <svg className="w-24 h-24 transform -rotate-90">
+                                                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
+                                                        <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * quest.match_score) / 100} className="text-primary transition-all duration-1000 ease-out" />
+                                                    </svg>
+                                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                                                        <span className="text-xl font-bold text-white leading-none">{quest.match_score}%</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Match</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Middle Column: Content */}
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h2 className="text-3xl font-bold text-white group-hover:text-primary transition-colors">{quest.title}</h2>
+                                                    <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded border border-primary/20">+{quest.xp_value} XP</span>
+                                                </div>
+                                                <p className="text-lg text-white/80 font-medium mb-4 italic">"{quest.description}"</p>
+                                                <p className="text-muted-foreground leading-relaxed mb-6">
+                                                    {quest.detailed_writeup}
+                                                </p>
+
+                                                {/* Stat Bars */}
+                                                <div className="grid sm:grid-cols-3 gap-6 mb-8 bg-black/20 p-4 rounded-xl border border-white/5">
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                                            <span>Difficulty</span>
+                                                            <span>{quest.difficulty_score}/10</span>
+                                                        </div>
+                                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${quest.difficulty_score * 10}%` }} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                                            <span>Earnings</span>
+                                                            <span>{quest.income_score}/10</span>
+                                                        </div>
+                                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-green-500 rounded-full" style={{ width: `${quest.income_score * 10}%` }} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                                            <span>Speed</span>
+                                                            <span>{quest.velocity_score}/10</span>
+                                                        </div>
+                                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${quest.velocity_score * 10}%` }} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Right Column: CTA */}
+                                            <div className="flex-shrink-0 lg:w-48 flex flex-col justify-center h-full gap-4">
+                                                <Button
+                                                    className="w-full h-14 text-lg font-bold shadow-[0_0_20px_rgba(190,242,100,0.2)] hover:shadow-[0_0_30px_rgba(190,242,100,0.4)] transition-all"
+                                                    onClick={() => handleStartQuest(quest)}
+                                                >
+                                                    Start Quest
+                                                    <ArrowRight className="ml-2 h-5 w-5" />
+                                                </Button>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
