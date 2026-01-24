@@ -21,7 +21,7 @@ const MOCK_RESOURCES: Resource[] = [
         title: 'Finding Your Niche (Masterclass)',
         description: 'How to identify high-profit, low-competition markets.',
         type: 'video',
-        url: 'https://www.youtube.com/watch?v=FqB3PZ0M-Os', // Generic business video
+        url: 'https://www.youtube.com/watch?v=6zb99U-_43M',
         duration: '15:42',
         isPremium: false
     },
@@ -46,7 +46,7 @@ const MOCK_RESOURCES: Resource[] = [
         title: 'Free Logo Maker',
         description: 'Create a professional brand identity in minutes.',
         type: 'tool',
-        url: 'https://www.canva.com/create/logos/',
+        url: 'https://logo.pixella.ai/logo-maker?id_partner=g_search&feature=logo&clickid=Cj0KCQiA-NHLBhDSARIsAIhe9X0zTc824GkgcS9jLKHmzgFwoTeQaLHb_N-4eErk9l2kTbMHxbNx29gaAg2fEALw_wcB&campid=22807435561&agid=183060563456&keyword=logo%20maker%20ai&matchtype=e&creatid=764647384970&extid=&targetid=kwd-346145023594&device=c&devmod=&placement=&adpos=&utm_campaign=22807435561&utm_source=google&utm_medium=cpc&gad_source=1&gad_campaignid=22807435561&gbraid=0AAAAA_gI0WqUxxgGd7j9vp8hsi7p9L2JH&gclid=Cj0KCQiA-NHLBhDSARIsAIhe9X0zTc824GkgcS9jLKHmzgFwoTeQaLHb_N-4eErk9l2kTbMHxbNx29gaAg2fEALw_wcB',
         isPremium: false
     },
     {
@@ -54,7 +54,7 @@ const MOCK_RESOURCES: Resource[] = [
         title: 'Marketing 101 for Developers',
         description: 'How to get your first 100 users without paid ads.',
         type: 'video',
-        url: 'https://www.youtube.com/watch?v=1KxJ2f3-1rA',
+        url: 'https://www.youtube.com/watch?v=pfQL-M4lkdw&t=65s',
         duration: '12:30',
         isPremium: false
     },
