@@ -100,7 +100,8 @@ export function ResetPassword() {
     }
 
     // If no session and no error in URL, it might be an invalid link or direct navigation
-    if (!hasValidSession && !error) {
+    // BUT if we just succeeded, don't show this error (because signOut() clears the session)
+    if (!hasValidSession && !error && !success) {
         return (
             <div className="min-h-screen bg-background">
                 <Navbar />
