@@ -54,14 +54,30 @@ export function Settings() {
         setError(null);
 
         try {
-            // Delete user data from all tables first
-            await supabase.from('user_progress').delete().eq('user_id', user.id);
-            await supabase.from('community_posts').delete().eq('user_id', user.id);
-            await supabase.from('profiles').delete().eq('id', user.id);
+            // Get the current session token
+            const { data: { session } } = await supabase.auth.getSession();
 
-            // Note: To fully delete from Supabase Auth, you need a server-side Edge Function
-            // For now, we'll sign out and mark the profile as deleted
-            // The user will be orphaned but can't log in without profile
+            if (!session) {
+                throw new Error('No active session');
+            }
+
+            // Call the Edge Function to delete the account completely
+            const response = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to delete account');
+            }
 
             // Sign out and redirect
             await signOut();
