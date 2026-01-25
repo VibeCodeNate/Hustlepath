@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
                             name: 'HustlePath Pro Access',
                             description: `Full mission data unlock for: ${hustleTitle}`,
                         },
-                        unit_amount: 500, // $5.00 in cents
+                        unit_amount: 499, // $4.99 in cents
                         recurring: {
                             interval: 'month',
                         },
