@@ -123,6 +123,64 @@ export function Shop() {
         }
     };
 
+    const SpriteIcon = ({ item, size = 'md' }: { item: ShopItem, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
+        // Determine sheet URL (using placeholders if local assets missing)
+        const sheetUrl = `/assets/sprites_${item.spriteSheet}.png`;
+
+        // Calculate background position
+        // Assuming 32x32px sprites in a 16 column grid (512px width)
+        const col = item.spriteIndex % 16;
+        const row = Math.floor(item.spriteIndex / 16);
+
+        // Scale factor for display
+        const scale = size === 'xl' ? 4 : size === 'lg' ? 3 : size === 'md' ? 2 : 1;
+        const spriteSize = 32;
+
+        return (
+            <div
+                className="rendering-pixelated relative overflow-hidden"
+                style={{
+                    width: spriteSize * scale,
+                    height: spriteSize * scale,
+                    imageRendering: 'pixelated'
+                }}
+            >
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundImage: `url('${sheetUrl}')`,
+                        backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
+                        backgroundSize: `${spriteSize * 16 * scale}px auto`,
+                        imageRendering: 'pixelated'
+                    }}
+                    onError={(e) => {
+                        // Fallback to emoji if image fails
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement!.innerText = item.preview;
+                        e.currentTarget.parentElement!.style.display = 'flex';
+                        e.currentTarget.parentElement!.style.alignItems = 'center';
+                        e.currentTarget.parentElement!.style.justifyContent = 'center';
+                        e.currentTarget.parentElement!.style.fontSize = size === 'xl' ? '4rem' : '2rem';
+                    }}
+                />
+            </div>
+        );
+    };
+
+    // ... inside Shop component render ...
+
+    // [Inside the Purchase Modal]
+    // <SpriteIcon item={selectedItem} size="xl" />
+
+    // [Inside the Grid Item]
+    // <div className="aspect-square flex items-center justify-center p-4">
+    //     <SpriteIcon item={item} size="md" />
+    // </div>
+
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-blue-950 overflow-hidden">
             <Navbar />
@@ -151,8 +209,8 @@ export function Shop() {
                                 </button>
                             </div>
 
-                            <div className={`bg-gradient-to-b ${getRarityGradient(selectedItem.rarity)} rounded-xl p-6 text-center mb-4`}>
-                                <span className="text-6xl">{selectedItem.preview}</span>
+                            <div className={`bg-gradient-to-b ${getRarityGradient(selectedItem.rarity)} rounded-xl p-6 flex flex-col items-center text-center mb-4`}>
+                                <SpriteIcon item={selectedItem} size="xl" />
                                 <h3 className="text-xl font-bold mt-4">{selectedItem.name}</h3>
                                 <p className="text-sm opacity-80 capitalize">{selectedItem.rarity} {selectedItem.category}</p>
                             </div>
@@ -299,7 +357,7 @@ export function Shop() {
 
                                 {/* Item Preview */}
                                 <div className="aspect-square flex items-center justify-center p-4">
-                                    <span className="text-5xl">{item.preview}</span>
+                                    <SpriteIcon item={item} size="md" />
                                 </div>
 
                                 {/* Item Info */}

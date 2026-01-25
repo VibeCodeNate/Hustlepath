@@ -4,6 +4,8 @@
 export type ItemCategory = 'outfit' | 'hairstyle' | 'accessory' | 'color' | 'emote' | 'background' | 'calling_card';
 export type ItemRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
+export type SpriteSheet = 'weapons' | 'apparel' | 'items' | 'characters';
+
 export interface ShopItem {
     id: string;
     name: string;
@@ -11,7 +13,9 @@ export interface ShopItem {
     rarity: ItemRarity;
     price: number;
     description: string;
-    preview: string; // Emoji or icon representation
+    preview: string; // Emoji
+    spriteIndex: number;
+    spriteSheet: SpriteSheet;
     colors?: string[];
 }
 
@@ -166,30 +170,40 @@ function generateItem(category: ItemCategory, index: number, rng: () => number):
     const prefix = PREFIXES[Math.floor(rng() * PREFIXES.length)];
 
     let baseName: string;
+    let spriteSheet: SpriteSheet;
+
     switch (category) {
         case 'outfit':
             baseName = OUTFIT_NAMES[Math.floor(rng() * OUTFIT_NAMES.length)];
+            spriteSheet = 'characters';
             break;
         case 'hairstyle':
             baseName = HAIRSTYLE_NAMES[Math.floor(rng() * HAIRSTYLE_NAMES.length)];
+            spriteSheet = 'characters'; // Map hairstyles to characters sheet for now
             break;
         case 'accessory':
             baseName = ACCESSORY_NAMES[Math.floor(rng() * ACCESSORY_NAMES.length)];
+            spriteSheet = 'apparel';
             break;
         case 'emote':
             baseName = EMOTE_NAMES[Math.floor(rng() * EMOTE_NAMES.length)];
+            spriteSheet = 'characters';
             break;
         case 'background':
             baseName = BACKGROUND_NAMES[Math.floor(rng() * BACKGROUND_NAMES.length)];
+            spriteSheet = 'items';
             break;
         case 'calling_card':
             baseName = CALLING_CARD_NAMES[Math.floor(rng() * CALLING_CARD_NAMES.length)];
+            spriteSheet = 'items';
             break;
         case 'color':
             baseName = `Palette ${index}`;
+            spriteSheet = 'items';
             break;
         default:
             baseName = 'Item';
+            spriteSheet = 'items';
     }
 
     const name = `${prefix} ${baseName}`;
@@ -223,6 +237,8 @@ function generateItem(category: ItemCategory, index: number, rng: () => number):
         price: RARITY_PRICES[rarity],
         description,
         preview,
+        spriteIndex: index % 256, // Wrap around sprite sheet indices (assuming 16x16 grid or similar)
+        spriteSheet,
         colors
     };
 }
