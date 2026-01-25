@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { calculateNewProgress } from './gamification';
+import { getNicheRoadmap, type NicheType } from './nicheRoadmaps';
 
 export interface Objective {
     id: string;
@@ -19,29 +20,79 @@ export interface Week {
     description: string;
     isLocked: boolean;
     isCompleted: boolean;
+    unlockedAt?: string; // ISO timestamp when week was unlocked
     days: Day[];
 }
 
 export interface RoadmapData {
     weeks: Week[];
+    nicheId?: NicheType;
 }
 
-// Static template for now (MVP) - can be replaced by AI later
-export const TEMPLATE_ROADMAP: Week[] = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    title: `Week ${i + 1}`,
-    description: i === 0 ? "Foundation & Research" : i < 4 ? "Building the Base" : "Scaling & Growth",
-    isLocked: i > 0, // In real app, unlock based on time or previous week completion
-    isCompleted: false,
-    days: Array.from({ length: 7 }, (_, d) => ({
-        day: d + 1,
-        tasks: [
-            { id: `w${i + 1}d${d + 1}t1`, title: "Research & Planning Task", xp: 50, completed: false },
-            { id: `w${i + 1}d${d + 1}t2`, title: "Execution Objective", xp: 75, completed: false },
-            { id: `w${i + 1}d${d + 1}t3`, title: "Review & Optimize", xp: 25, completed: false },
-        ]
-    }))
-}));
+// Time-gating configuration
+const DAYS_BETWEEN_WEEKS = 7; // 7 days between week unlocks
+
+// Check if a week should be unlocked based on time
+export function isWeekUnlocked(weekIndex: number, weeks: Week[]): boolean {
+    if (weekIndex === 0) return true; // Week 1 always unlocked
+
+    const previousWeek = weeks[weekIndex - 1];
+    if (!previousWeek || !previousWeek.unlockedAt) return false;
+
+    // Check if previous week is completed
+    const previousWeekCompleted = previousWeek.days.every(day =>
+        day.tasks.every(task => task.completed)
+    );
+    if (!previousWeekCompleted) return false;
+
+    // Check if enough time has passed
+    const unlockedAt = new Date(previousWeek.unlockedAt);
+    const unlockDate = new Date(unlockedAt.getTime() + DAYS_BETWEEN_WEEKS * 24 * 60 * 60 * 1000);
+
+    return new Date() >= unlockDate;
+}
+
+// Get time remaining until next week unlocks
+export function getTimeUntilUnlock(weekIndex: number, weeks: Week[]): { days: number; hours: number; minutes: number } | null {
+    if (weekIndex === 0) return null;
+
+    const previousWeek = weeks[weekIndex - 1];
+    if (!previousWeek || !previousWeek.unlockedAt) return null;
+
+    const unlockedAt = new Date(previousWeek.unlockedAt);
+    const unlockDate = new Date(unlockedAt.getTime() + DAYS_BETWEEN_WEEKS * 24 * 60 * 60 * 1000);
+    const now = new Date();
+
+    if (now >= unlockDate) return null;
+
+    const diff = unlockDate.getTime() - now.getTime();
+    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+    const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+
+    return { days, hours, minutes };
+}
+
+// Apply time-gating to weeks
+export function applyTimeGating(weeks: Week[]): Week[] {
+    return weeks.map((week, index) => {
+        if (index === 0) {
+            // Week 1 - always unlocked, set unlockedAt if not set
+            return {
+                ...week,
+                isLocked: false,
+                unlockedAt: week.unlockedAt || new Date().toISOString()
+            };
+        }
+
+        const shouldUnlock = isWeekUnlocked(index, weeks);
+        return {
+            ...week,
+            isLocked: !shouldUnlock,
+            unlockedAt: shouldUnlock && !week.unlockedAt ? new Date().toISOString() : week.unlockedAt
+        };
+    });
+}
 
 export async function getRoadmap(userId: string) {
     const { data, error } = await supabase
@@ -55,19 +106,35 @@ export async function getRoadmap(userId: string) {
         return { error };
     }
 
+    // Apply time-gating to returned data
+    if (data && data.roadmap_data?.weeks) {
+        data.roadmap_data.weeks = applyTimeGating(data.roadmap_data.weeks);
+    }
+
     return { data, error: null };
 }
 
-export async function createInitialRoadmap(userId: string, hustleId: string = 'general') {
+export async function createInitialRoadmap(userId: string, nicheId: NicheType = 'general') {
+    // Get niche-specific roadmap
+    const nicheWeeks = getNicheRoadmap(nicheId);
+
+    // Set first week as unlocked with timestamp
+    const weeks = nicheWeeks.map((week, index) => ({
+        ...week,
+        isLocked: index > 0,
+        unlockedAt: index === 0 ? new Date().toISOString() : undefined
+    }));
+
     const roadmapData: RoadmapData = {
-        weeks: TEMPLATE_ROADMAP
+        weeks,
+        nicheId
     };
 
     const { data, error } = await supabase
         .from('roadmap_progress')
         .insert({
             user_id: userId,
-            hustle_id: hustleId,
+            hustle_id: nicheId,
             roadmap_data: roadmapData,
             current_day: 1,
             current_week: 1,
@@ -80,12 +147,13 @@ export async function createInitialRoadmap(userId: string, hustleId: string = 'g
 }
 
 export async function updateRoadmapProgress(userId: string, updatedWeeks: Week[]) {
-    // We update the huge JSON blob for now. In a strictly relational DB we'd have tables for tasks,
-    // but JSONB allows flexibility for AI generated structures.
+    // Apply time-gating before saving
+    const gatedWeeks = applyTimeGating(updatedWeeks);
+
     const { error } = await supabase
         .from('roadmap_progress')
         .update({
-            roadmap_data: { weeks: updatedWeeks },
+            roadmap_data: { weeks: gatedWeeks },
             updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -121,4 +189,30 @@ export async function completeTaskInDb(userId: string, _taskId: string, xpReward
         .eq('user_id', userId);
 
     return { error: updateError, newLevel, leveledUp };
+}
+
+// Check and unlock next week if conditions are met
+export async function checkAndUnlockNextWeek(userId: string, weeks: Week[], currentWeekIndex: number): Promise<Week[] | null> {
+    const currentWeek = weeks[currentWeekIndex];
+    const nextWeekIndex = currentWeekIndex + 1;
+
+    if (nextWeekIndex >= weeks.length) return null; // No more weeks
+
+    // Check if current week is 100% complete
+    const isCurrentWeekComplete = currentWeek.days.every(day =>
+        day.tasks.every(task => task.completed)
+    );
+
+    if (!isCurrentWeekComplete) return null;
+
+    // Apply time-gating
+    const updatedWeeks = applyTimeGating(weeks);
+
+    // Save if next week is now unlocked
+    if (!updatedWeeks[nextWeekIndex].isLocked) {
+        await updateRoadmapProgress(userId, updatedWeeks);
+        return updatedWeeks;
+    }
+
+    return null;
 }

@@ -5,7 +5,7 @@ import { MapCheckpoint, type CheckpointState } from '../components/MapCheckpoint
 import { MapPath } from '../components/MapPath';
 import { TaskDrawer } from '../components/TaskDrawer';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, AlertCircle, Map, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Map, ChevronLeft, ChevronRight, Zap, Lock, Clock, Sparkles, DollarSign, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import {
@@ -14,18 +14,19 @@ import {
     getRoadmap,
     createInitialRoadmap,
     updateRoadmapProgress,
-    completeTaskInDb
+    completeTaskInDb,
+    getTimeUntilUnlock
 } from '../lib/roadmap';
+import { NICHE_INFO, type NicheType } from '../lib/nicheRoadmaps';
 import { useSound } from '../lib/sound';
 import { LevelUpModal } from '../components/LevelUpModal';
 
 // Generate checkpoint positions for a winding path across the map
 function generateCheckpointPositions(weekIndex: number): { x: number; y: number }[] {
     const positions: { x: number; y: number }[] = [];
-    const baseY = 15 + (weekIndex % 4) * 20; // Vary vertical position by week
+    const baseY = 15 + (weekIndex % 4) * 20;
 
     for (let day = 0; day < 7; day++) {
-        // Create a winding horizontal path with some vertical variation
         const x = 8 + day * 12 + (day % 2 === 0 ? 2 : -2);
         const y = baseY + Math.sin(day * 0.8) * 8 + (day % 3) * 3;
         positions.push({ x: Math.min(92, Math.max(8, x)), y: Math.min(85, Math.max(15, y)) });
@@ -36,7 +37,7 @@ function generateCheckpointPositions(weekIndex: number): { x: number; y: number 
 
 export function Roadmap() {
     const navigate = useNavigate();
-    const { user, refreshProfile } = useAuth();
+    const { user, profile, refreshProfile } = useAuth();
     const { play } = useSound();
 
     // State
@@ -45,6 +46,7 @@ export function Roadmap() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [processingTask, setProcessingTask] = useState<string | null>(null);
+    const [nicheId, setNicheId] = useState<NicheType>('general');
 
     // Drawer State
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -57,6 +59,9 @@ export function Roadmap() {
     // Generate checkpoint positions for current week
     const checkpointPositions = useMemo(() => generateCheckpointPositions(currentWeek), [currentWeek]);
 
+    // Get niche info
+    const nicheInfo = NICHE_INFO.find(n => n.id === nicheId) || NICHE_INFO[NICHE_INFO.length - 1];
+
     // Initial Data Fetch
     useEffect(() => {
         if (!user) return;
@@ -68,15 +73,20 @@ export function Roadmap() {
                 if (data) {
                     setWeeks(data.roadmap_data.weeks);
                     setCurrentWeek(data.current_week - 1);
+                    setNicheId(data.roadmap_data.nicheId || data.hustle_id || 'general');
                     return;
                 }
 
-                console.log('No roadmap found, creating initial template...');
-                const { data: newData, error: createError } = await createInitialRoadmap(user.id);
+                // Get niche from profile
+                const userNiche = (profile?.current_hustle_id || 'freelancing') as NicheType;
+                console.log('No roadmap found, creating for niche:', userNiche);
+
+                const { data: newData, error: createError } = await createInitialRoadmap(user.id, userNiche);
 
                 if (createError) throw createError;
                 if (newData) {
                     setWeeks(newData.roadmap_data.weeks);
+                    setNicheId(userNiche);
                 }
             } catch (err) {
                 console.error('Failed to load roadmap:', err);
@@ -87,7 +97,7 @@ export function Roadmap() {
         };
 
         loadRoadmap();
-    }, [user]);
+    }, [user, profile]);
 
     // Get checkpoint state based on completion
     const getCheckpointState = (weekIdx: number, dayIdx: number): CheckpointState => {
@@ -100,7 +110,6 @@ export function Roadmap() {
         const allCompleted = day.tasks.every(t => t.completed);
         const someCompleted = day.tasks.some(t => t.completed);
 
-        // Determine if this is the current active checkpoint
         const isCurrentWeek = weekIdx === currentWeek;
 
         if (allCompleted) return 'completed';
@@ -174,6 +183,9 @@ export function Roadmap() {
         return totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
     };
 
+    // Get time until next week unlocks
+    const timeUntilUnlock = weeks.length > currentWeek + 1 ? getTimeUntilUnlock(currentWeek + 1, weeks) : null;
+
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -202,6 +214,20 @@ export function Roadmap() {
             <Navbar />
             <LevelUpModal level={newLevel} isOpen={showLevelUp} onClose={() => setShowLevelUp(false)} />
 
+            {/* Background Effects */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <motion.div
+                    animate={{ y: [0, -30, 0], scale: [1, 1.1, 1] }}
+                    transition={{ duration: 10, repeat: Infinity }}
+                    className="absolute top-0 left-0 w-[400px] h-[400px] bg-primary/10 blur-[120px] rounded-full"
+                />
+                <motion.div
+                    animate={{ y: [0, 40, 0] }}
+                    transition={{ duration: 12, repeat: Infinity, delay: 1 }}
+                    className="absolute top-1/2 right-0 w-[350px] h-[350px] bg-cyan-500/10 blur-[100px] rounded-full"
+                />
+            </div>
+
             {/* Task Drawer */}
             {selectedDay && (
                 <TaskDrawer
@@ -215,7 +241,7 @@ export function Roadmap() {
                 />
             )}
 
-            <div className="container mx-auto px-4 pt-20 pb-4 md:pb-8 h-screen flex flex-col">
+            <div className="container mx-auto px-4 pt-20 pb-4 md:pb-8 h-screen flex flex-col relative z-10">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 md:mb-4 flex-shrink-0">
                     <div className="flex items-center gap-3">
@@ -227,7 +253,10 @@ export function Roadmap() {
                                 <Map className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                                 Quest Map
                             </h1>
-                            <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Navigate through your 90-day journey</p>
+                            <p className="text-xs md:text-sm text-muted-foreground hidden sm:flex items-center gap-2">
+                                <span className="text-lg">{nicheInfo.icon}</span>
+                                <span>{nicheInfo.name}</span>
+                            </p>
                         </div>
                     </div>
 
@@ -256,6 +285,31 @@ export function Roadmap() {
                     </div>
                 </div>
 
+                {/* Quick Nav Tabs */}
+                <div className="flex gap-2 mb-3 overflow-x-auto pb-2 flex-shrink-0">
+                    <button
+                        onClick={() => navigate('/extra-objectives')}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm whitespace-nowrap hover:bg-white/10 transition-colors"
+                    >
+                        <Sparkles className="w-4 h-4 text-yellow-400" />
+                        Extra Objectives
+                    </button>
+                    <button
+                        onClick={() => navigate('/earnings')}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm whitespace-nowrap hover:bg-white/10 transition-colors"
+                    >
+                        <DollarSign className="w-4 h-4 text-green-400" />
+                        Earnings
+                    </button>
+                    <button
+                        onClick={() => navigate('/goals')}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm whitespace-nowrap hover:bg-white/10 transition-colors"
+                    >
+                        <Target className="w-4 h-4 text-fuchsia-400" />
+                        Goals
+                    </button>
+                </div>
+
                 {/* Week Progress Bar */}
                 <div className="mb-3 md:mb-4 flex-shrink-0">
                     <div className="flex items-center justify-between text-xs mb-1">
@@ -272,6 +326,24 @@ export function Roadmap() {
                     </div>
                 </div>
 
+                {/* Time Lock Warning */}
+                {timeUntilUnlock && weekProgress === 100 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 mb-4 flex items-center gap-3 flex-shrink-0"
+                    >
+                        <Clock className="w-5 h-5 text-yellow-400" />
+                        <div className="flex-1">
+                            <div className="text-sm font-medium text-yellow-400">Week {currentWeek + 2} unlocks in:</div>
+                            <div className="text-lg font-bold">
+                                {timeUntilUnlock.days}d {timeUntilUnlock.hours}h {timeUntilUnlock.minutes}m
+                            </div>
+                        </div>
+                        <p className="text-xs text-yellow-400/60 hidden md:block">Complete daily objectives while you wait!</p>
+                    </motion.div>
+                )}
+
                 {/* Map Container */}
                 <div className="flex-1 relative rounded-2xl md:rounded-3xl border border-white/10 overflow-hidden bg-zinc-900/50 map-grid terrain-gradient min-h-[300px]">
                     {/* Zone Label */}
@@ -281,11 +353,14 @@ export function Roadmap() {
                         animate={{ opacity: 1, y: 0 }}
                         className="absolute top-2 left-2 md:top-4 md:left-4 z-20 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg md:rounded-xl px-2 py-1 md:px-4 md:py-2"
                     >
-                        <div className="text-[10px] md:text-xs text-primary uppercase tracking-wider">Zone {currentWeek + 1}</div>
+                        <div className="text-[10px] md:text-xs text-primary uppercase tracking-wider flex items-center gap-1">
+                            <span>{nicheInfo.icon}</span>
+                            Zone {currentWeek + 1}
+                        </div>
                         <div className="text-sm md:text-base font-bold">{activeWeek.description}</div>
                     </motion.div>
 
-                    {/* XP Indicator - Hidden on small screens */}
+                    {/* XP Indicator */}
                     <div className="hidden sm:flex absolute top-2 right-2 md:top-4 md:right-4 z-20 bg-black/60 backdrop-blur-md border border-yellow-500/30 rounded-lg md:rounded-xl px-2 py-1 md:px-4 md:py-2 items-center gap-2">
                         <Zap className="w-3 h-3 md:w-4 md:h-4 text-yellow-400" />
                         <span className="text-xs md:text-sm font-bold text-yellow-400">
@@ -293,8 +368,19 @@ export function Roadmap() {
                         </span>
                     </div>
 
+                    {/* Locked Week Overlay */}
+                    {activeWeek.isLocked && (
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-30">
+                            <Lock className="w-16 h-16 text-white/30 mb-4" />
+                            <h3 className="text-xl font-bold mb-2">Week {currentWeek + 1} Locked</h3>
+                            <p className="text-sm text-muted-foreground text-center max-w-[300px]">
+                                Complete Week {currentWeek} and wait 7 days to unlock this week.
+                            </p>
+                        </div>
+                    )}
+
                     {/* Paths connecting checkpoints */}
-                    {checkpointPositions.slice(0, -1).map((pos, idx) => {
+                    {!activeWeek.isLocked && checkpointPositions.slice(0, -1).map((pos, idx) => {
                         const nextPos = checkpointPositions[idx + 1];
                         const currentState = getCheckpointState(currentWeek, idx);
                         const nextState = getCheckpointState(currentWeek, idx + 1);
@@ -313,7 +399,7 @@ export function Roadmap() {
                     })}
 
                     {/* Checkpoints */}
-                    {checkpointPositions.map((pos, dayIdx) => {
+                    {!activeWeek.isLocked && checkpointPositions.map((pos, dayIdx) => {
                         const day = activeWeek.days[dayIdx];
                         const state = getCheckpointState(currentWeek, dayIdx);
                         const tasksCompleted = day.tasks.filter(t => t.completed).length;
@@ -334,14 +420,14 @@ export function Roadmap() {
                         );
                     })}
 
-                    {/* Week Progress Markers (bottom) - Show fewer on mobile */}
+                    {/* Week Progress Markers */}
                     <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1 md:gap-2 z-20">
                         {weeks.slice(0, 12).map((week, idx) => (
                             <button
                                 key={week.id}
                                 onClick={() => !week.isLocked && setCurrentWeek(idx)}
                                 disabled={week.isLocked}
-                                className={`w-6 h-6 md:w-8 md:h-8 rounded-md md:rounded-lg text-[10px] md:text-xs font-bold transition-all ${idx === currentWeek
+                                className={`w-6 h-6 md:w-8 md:h-8 rounded-md md:rounded-lg text-[10px] md:text-xs font-bold transition-all flex items-center justify-center ${idx === currentWeek
                                     ? 'bg-primary text-black scale-110'
                                     : week.isLocked
                                         ? 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
@@ -350,12 +436,12 @@ export function Roadmap() {
                                             : 'bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700 border border-white/10'
                                     }`}
                             >
-                                {idx + 1}
+                                {week.isLocked ? <Lock className="w-3 h-3" /> : idx + 1}
                             </button>
                         ))}
                     </div>
 
-                    {/* Instructions Hint - Hidden on mobile */}
+                    {/* Instructions Hint */}
                     <div className="hidden md:block absolute bottom-4 right-4 z-20 text-xs text-white/40">
                         Click checkpoints to view tasks
                     </div>

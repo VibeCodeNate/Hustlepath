@@ -15,6 +15,9 @@ import { CharacterPage } from './pages/CharacterPage';
 import { Community } from './pages/Community';
 import { Resources } from './pages/Resources';
 import { Settings } from './pages/Settings';
+import { ExtraObjectives } from './pages/ExtraObjectives';
+import { Earnings } from './pages/Earnings';
+import { Goals } from './pages/Goals';
 
 function App() {
   return (
@@ -75,6 +78,21 @@ function App() {
                 <Settings />
               </ProtectedRoute>
             } />
+            <Route path="/extra-objectives" element={
+              <ProtectedRoute>
+                <ExtraObjectives />
+              </ProtectedRoute>
+            } />
+            <Route path="/earnings" element={
+              <ProtectedRoute>
+                <Earnings />
+              </ProtectedRoute>
+            } />
+            <Route path="/goals" element={
+              <ProtectedRoute>
+                <Goals />
+              </ProtectedRoute>
+            } />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
@@ -83,3 +101,4 @@ function App() {
 }
 
 export default App;
+
