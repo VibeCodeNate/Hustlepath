@@ -2,6 +2,7 @@
 // Deno runtime for Supabase Edge Functions
 
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -41,8 +42,28 @@ Deno.serve(async (req: Request) => {
             // No body or invalid JSON, use defaults
         }
 
+        // Create Supabase client to get the user ID from the Authorization header
+        // Note: standard Supabase Edge Function pattern uses Authorization: Bearer <token>
+        // But we are Deno.serve. Let's rely on the token passed from client.
+
+        // Actually, easiest way in Edge Functions to get user is:
+        const authHeader = req.headers.get('Authorization')!;
+        // We can decode JWT or just trust client passed it? No, verify.
+        // Or simpler: pass user_id in body from client? NO, insecure.
+        // We must verify token.
+
+        // ... Wait, to use Supabase Client in Edge Function to getUser:
+        const supabaseClient = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            { global: { headers: { Authorization: authHeader } } }
+        );
+
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
+            customer_email: user?.email, // Pre-fill email from auth
             line_items: [
                 {
                     price_data: {
@@ -64,6 +85,7 @@ Deno.serve(async (req: Request) => {
             cancel_url: `${returnUrl}/explainer`,
             metadata: {
                 hustleTitle,
+                user_id: user?.id // PASS USER ID
             },
         });
 
