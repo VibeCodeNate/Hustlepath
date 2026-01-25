@@ -1,7 +1,7 @@
 // Niche-Specific 12-Week Roadmaps for HustlePath
 // Each niche has tailored weekly objectives for the side hustle journey
 
-import { Week } from './roadmap';
+import type { Week } from './roadmap';
 
 export type NicheType =
     | 'content-creator'
@@ -1227,7 +1227,7 @@ export const SAAS_ROADMAP: Week[] = [
 ];
 
 // Helper function to generate remaining weeks (3-12) with progressive challenges
-function generateRemainingWeeks(niche: string): Week[] {
+function generateRemainingWeeks(_niche: string): Week[] {
     const weekThemes: { [key: number]: string } = {
         3: 'Growth & Scale',
         4: 'Systems & Automation',
