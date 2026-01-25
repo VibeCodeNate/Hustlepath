@@ -531,7 +531,7 @@ export function Results() {
                                     window.open('https://buy.stripe.com/test_placeholder', '_blank');
                                 }}
                             >
-                                Upgrade Now - $9.99
+                                Upgrade Now - $4.99 / month
                             </Button>
 
                             <button
