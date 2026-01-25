@@ -4,13 +4,19 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { openai } from '../lib/openai';
 import { fireConfetti } from '../lib/confetti';
-import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star } from 'lucide-react';
+import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Recommendation {
     title: string;
     description: string;
-    detailed_writeup: string;
+    // New comprehensive fields
+    why_this_fits: string;
+    earnings_potential_text: string;
+    getting_started_steps: string[];
+    key_influencers: string[];
+    pro_insight_teaser: string;
+
     difficulty_score: number;
     income_score: number;
     velocity_score: number;
@@ -34,7 +40,7 @@ export function Results() {
         setLoading(true);
         try {
             const prompt = `
-                Act as a video game quest giver and business consultant. Based on this profile, generate 3 "Side Hustle Quests" that are perfect matches.
+                Act as a sophisticated business consultant and video game quest giver. Based on this profile, generate 3 "Side Hustle Quests" that are perfect matches.
 
                 User Profile:
                 - Capital: ${answers.capital}
@@ -49,10 +55,10 @@ export function Results() {
 
                 ${retryTitles.length > 0 ? `CRITICAL: Do NOT include these previously suggested quests: ${retryTitles.join(', ')}` : ''}
 
-                You MUST select recommendations strictly from this pool of options (excluding any listed above), but tailor the title/angle to the user:
+                Pool of Options (Tailor the title/angle to the user):
                 - Baking business / Custom Dessert Orders
                 - Digital products (E-books, Templates)
-                - Monetize a YouTube channel
+                - Monetize a YouTube channel (Content Creation)
                 - Start a blog or newsletter
                 - Secure social media sponsorships (UGC/Influencer)
                 - Record a podcast
@@ -82,10 +88,16 @@ export function Results() {
                 - Give neighborhood tours (Experiences)
                 - Pet-sitting and dog walking
 
+                For EACH of the 3 result objects, you must provide a COMPREHENSIVE GUIDE (approx 200 words total content per item).
                 Return a JSON array of 3 objects with these EXACT keys:
                 - title: "Quest Name" (e.g. "The Digital Artisan")
                 - description: One catchy hook sentence.
-                - detailed_writeup: A 2-3 sentence exciting pitch about why this is a wealth builder for THEM specifically.
+                - why_this_fits: A 2-3 sentence explanation of why this specific hustle matches their detailed profile (skills, time, vehicle, etc).
+                - earnings_potential_text: A detailed sentence about realistic earnings (e.g. "Beginners often make $X/mo, while experts scale to $Y/mo by doing Z.").
+                - getting_started_steps: An array of 3 concrete, actionable first steps they can take TODAY.
+                - key_influencers: An array of 2-3 names or channels to watch in this space.
+                - pro_insight_teaser: A tantalizing 1-sentence teaser about a specific advanced strategy or resource that is "locked" in the pro guide (e.g. "Unlock the Pro map to get our vendor list" or "See how to automate this fully").
+                
                 - difficulty_score: Number 1-10 (1 = easy).
                 - income_score: Number 1-10 (10 = millionaire potential).
                 - velocity_score: Number 1-10 (10 = paid today).
@@ -292,51 +304,117 @@ export function Results() {
                                                     <h2 className="text-3xl font-bold text-white group-hover:text-primary transition-colors">{quest.title}</h2>
                                                     <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded border border-primary/20">+{quest.xp_value} XP</span>
                                                 </div>
-                                                <p className="text-lg text-white/80 font-medium mb-4 italic">"{quest.description}"</p>
-                                                <p className="text-muted-foreground leading-relaxed mb-6">
-                                                    {quest.detailed_writeup}
-                                                </p>
+                                                <p className="text-lg text-white/80 font-medium mb-6 italic border-b border-white/10 pb-4">"{quest.description}"</p>
 
-                                                {/* Stat Bars */}
-                                                <div className="grid sm:grid-cols-3 gap-6 mb-8 bg-black/20 p-4 rounded-xl border border-white/5">
-                                                    <div className="space-y-2">
-                                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                                            <span>Difficulty</span>
-                                                            <span>{quest.difficulty_score}/10</span>
-                                                        </div>
-                                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${quest.difficulty_score * 10}%` }} />
+                                                {/* Why It Fits */}
+                                                <div className="mb-6">
+                                                    <h3 className="text-sm font-bold text-primary mb-2 flex items-center gap-2">
+                                                        <Target className="w-4 h-4" /> WHY IT FITS YOU
+                                                    </h3>
+                                                    <p className="text-muted-foreground leading-relaxed">
+                                                        {quest.why_this_fits}
+                                                    </p>
+                                                </div>
+
+                                                {/* Earnings Potential */}
+                                                <div className="mb-6">
+                                                    <h3 className="text-sm font-bold text-green-400 mb-2 flex items-center gap-2">
+                                                        <Coins className="w-4 h-4" /> EARNING POTENTIAL
+                                                    </h3>
+                                                    <p className="text-white/90 leading-relaxed font-medium bg-green-500/10 p-3 rounded-lg border border-green-500/20">
+                                                        {quest.earnings_potential_text}
+                                                    </p>
+                                                </div>
+
+                                                {/* Getting Started & Influencers Grid */}
+                                                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                                                    <div>
+                                                        <h3 className="text-sm font-bold text-blue-400 mb-2 flex items-center gap-2">
+                                                            <Rocket className="w-4 h-4" /> START TODAY
+                                                        </h3>
+                                                        <ul className="space-y-2">
+                                                            {quest.getting_started_steps.map((step, i) => (
+                                                                <li key={i} className="flex gap-2 text-sm text-gray-300">
+                                                                    <span className="text-blue-500 font-bold">{i + 1}.</span>
+                                                                    {step}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-bold text-amber-400 mb-2 flex items-center gap-2">
+                                                            <Users className="w-4 h-4" /> TOP PLAYERS
+                                                        </h3>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {quest.key_influencers.map((name, i) => (
+                                                                <span key={i} className="bg-amber-500/10 text-amber-300 text-xs px-2 py-1 rounded border border-amber-500/20">
+                                                                    {name}
+                                                                </span>
+                                                            ))}
                                                         </div>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                                            <span>Earnings</span>
-                                                            <span>{quest.income_score}/10</span>
+                                                </div>
+
+                                                {/* Pro Teaser (Locked) */}
+                                                <div className="bg-black/40 border border-white/10 rounded-xl p-4 relative overflow-hidden group/lock cursor-pointer hover:border-primary/50 transition-colors">
+                                                    <div className="flex items-start gap-4 opacity-50 group-hover/lock:opacity-80 transition-opacity">
+                                                        <div className="bg-white/5 p-2 rounded-lg">
+                                                            <Lock className="w-5 h-5 text-white" />
                                                         </div>
-                                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-green-500 rounded-full" style={{ width: `${quest.income_score * 10}%` }} />
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-white mb-1">Pro Secret Unlocked in Roadmap</h4>
+                                                            <p className="text-sm text-muted-foreground blur-[2px] select-none group-hover/lock:blur-[1px] transition-all">
+                                                                {quest.pro_insight_teaser} with the complete vendor list and templates.
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                                            <span>Speed</span>
-                                                            <span>{quest.velocity_score}/10</span>
-                                                        </div>
-                                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${quest.velocity_score * 10}%` }} />
-                                                        </div>
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/lock:opacity-100 transition-opacity bg-black/50 backdrop-blur-[1px]">
+                                                        <span className="text-primary font-bold text-sm bg-black px-4 py-2 rounded-full border border-primary shadow-[0_0_10px_rgba(190,242,100,0.3)]">
+                                                            View Full Roadmap
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Right Column: CTA */}
-                                            <div className="flex-shrink-0 lg:w-48 flex flex-col justify-center h-full gap-4">
+                                            {/* Right Column: CTA & Stats */}
+                                            <div className="flex-shrink-0 lg:w-48 flex flex-col gap-6">
+                                                {/* Stat Bars Vertical Stack */}
+                                                <div className="space-y-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                            <span>Difficulty</span>
+                                                            <span>{quest.difficulty_score}/10</span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${quest.difficulty_score * 10}%` }} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                            <span>Income</span>
+                                                            <span>{quest.income_score}/10</span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-green-500 rounded-full" style={{ width: `${quest.income_score * 10}%` }} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                            <span>Speed</span>
+                                                            <span>{quest.velocity_score}/10</span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${quest.velocity_score * 10}%` }} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <Button
-                                                    className="w-full h-14 text-lg font-bold shadow-[0_0_20px_rgba(190,242,100,0.2)] hover:shadow-[0_0_30px_rgba(190,242,100,0.4)] transition-all"
+                                                    className="w-full h-14 text-lg font-bold shadow-[0_0_20px_rgba(190,242,100,0.2)] hover:shadow-[0_0_30px_rgba(190,242,100,0.4)] transition-all whitespace-normal leading-tight"
                                                     onClick={() => handleStartQuest(quest)}
                                                 >
-                                                    Start Quest
-                                                    <ArrowRight className="ml-2 h-5 w-5" />
+                                                    Start Mission
+                                                    <ArrowRight className="ml-2 h-5 w-5 shrink-0" />
                                                 </Button>
                                             </div>
 
