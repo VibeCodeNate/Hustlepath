@@ -17,7 +17,7 @@ import { supabase } from '../lib/supabase';
 
 export function Shop() {
     const navigate = useNavigate();
-    const { user, profile, refreshProfile } = useAuth();
+    const { user } = useAuth();
     const { play } = useSound();
 
     const [shopItems, setShopItems] = useState<ShopItem[]>([]);
@@ -264,8 +264,8 @@ export function Shop() {
                             key={cat.id}
                             onClick={() => setActiveCategory(cat.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${activeCategory === cat.id
-                                    ? 'bg-cyan-500 text-black'
-                                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                                ? 'bg-cyan-500 text-black'
+                                : 'bg-white/10 text-white/70 hover:bg-white/20'
                                 }`}
                         >
                             <span>{cat.icon}</span>

@@ -35,13 +35,13 @@ const WEEK_COLORS = [
     { bg: 'bg-lime-600', border: 'border-lime-500', text: 'text-lime-400', gradient: 'from-lime-600 to-lime-700' },
 ];
 
-// Category rows for the grid
-const CATEGORIES = [
-    { id: 'daily', name: 'Daily Objectives', icon: '📋', description: 'Core tasks for each day' },
-    { id: 'skills', name: 'Skill Building', icon: '🎯', description: 'Learn and practice' },
-    { id: 'action', name: 'Action Items', icon: '⚡', description: 'Execute and deliver' },
-    { id: 'growth', name: 'Growth & Review', icon: '📈', description: 'Analyze and improve' },
-];
+// Category rows for the grid (for future use)
+// const CATEGORIES = [
+//     { id: 'daily', name: 'Daily Objectives', icon: '📋', description: 'Core tasks for each day' },
+//     { id: 'skills', name: 'Skill Building', icon: '🎯', description: 'Learn and practice' },
+//     { id: 'action', name: 'Action Items', icon: '⚡', description: 'Execute and deliver' },
+//     { id: 'growth', name: 'Growth & Review', icon: '📈', description: 'Analyze and improve' },
+// ];
 
 export function Roadmap() {
     const navigate = useNavigate();
@@ -396,10 +396,10 @@ export function Roadmap() {
                                                     onClick={() => handleCellClick(actualWeekIdx, dayIdx)}
                                                     disabled={isLocked}
                                                     className={`w-full p-4 rounded-xl border-2 transition-all ${isLocked
-                                                            ? 'bg-zinc-800/30 border-zinc-700/30 cursor-not-allowed opacity-50'
-                                                            : isAllComplete
-                                                                ? `bg-gradient-to-br from-green-500/20 to-emerald-500/10 ${color.border} border-green-500/50 hover:scale-105`
-                                                                : `bg-zinc-800/50 ${color.border} border-opacity-30 hover:border-opacity-100 hover:bg-zinc-700/50 hover:scale-105`
+                                                        ? 'bg-zinc-800/30 border-zinc-700/30 cursor-not-allowed opacity-50'
+                                                        : isAllComplete
+                                                            ? `bg-gradient-to-br from-green-500/20 to-emerald-500/10 ${color.border} border-green-500/50 hover:scale-105`
+                                                            : `bg-zinc-800/50 ${color.border} border-opacity-30 hover:border-opacity-100 hover:bg-zinc-700/50 hover:scale-105`
                                                         } focus:outline-none focus:ring-2 focus:ring-primary/50`}
                                                 >
                                                     {isLocked ? (
@@ -424,8 +424,8 @@ export function Roadmap() {
                                                                     <div
                                                                         key={task.id}
                                                                         className={`text-[10px] truncate px-2 py-0.5 rounded ${task.completed
-                                                                                ? 'bg-green-500/20 text-green-300 line-through'
-                                                                                : 'bg-white/5 text-white/60'
+                                                                            ? 'bg-green-500/20 text-green-300 line-through'
+                                                                            : 'bg-white/5 text-white/60'
                                                                             }`}
                                                                     >
                                                                         {task.title}
