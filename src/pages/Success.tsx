@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
+import { useAuth } from '../lib/auth';
 import { motion } from 'framer-motion';
 import { fireConfetti } from '../lib/confetti';
 import {
@@ -17,14 +18,37 @@ export function Success() {
     const [searchParams] = useSearchParams();
     const sessionId = searchParams.get('session_id');
 
+    const { refreshProfile, profile } = useAuth();
+
     useEffect(() => {
         // Fire confetti on mount
         fireConfetti();
-
-        // Fire again after a short delay for extra celebration
         const timer = setTimeout(() => fireConfetti(), 500);
-        return () => clearTimeout(timer);
-    }, []);
+
+        // Force refresh profile to catch webhook update
+        const checkProStatus = async () => {
+            await refreshProfile();
+        };
+
+        // Poll for status update (webhook might delay 1-3s)
+        checkProStatus();
+        const interval = setInterval(() => {
+            if (!profile?.is_pro) {
+                checkProStatus();
+            } else {
+                clearInterval(interval);
+            }
+        }, 2000);
+
+        // Stop polling after 15s to save resources
+        const stopTimer = setTimeout(() => clearInterval(interval), 15000);
+
+        return () => {
+            clearTimeout(timer);
+            clearInterval(interval);
+            clearTimeout(stopTimer);
+        };
+    }, [profile?.is_pro]);
 
     return (
         <div className="min-h-screen bg-background pb-20">
