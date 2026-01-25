@@ -1228,33 +1228,145 @@ export const SAAS_ROADMAP: Week[] = [
 
 // Helper function to generate remaining weeks (3-12) with progressive challenges
 function generateRemainingWeeks(_niche: string): Week[] {
-    const weekThemes: { [key: number]: string } = {
-        3: 'Growth & Scale',
-        4: 'Systems & Automation',
-        5: 'Advanced Techniques',
-        6: 'Monetization Mastery',
-        7: 'Community Building',
-        8: 'Optimization',
-        9: 'Expansion',
-        10: 'Brand Authority',
-        11: 'Passive Income',
-        12: 'Long-term Vision'
+    // Tangible objectives organized by week theme - 3 tasks per day for 7 days
+    const weekObjectives: { [key: number]: { theme: string; tasks: string[][] } } = {
+        3: {
+            theme: 'Growth & Scale',
+            tasks: [
+                ['Increase output by 50% - set daily production goals', 'Analyze your best-performing work from Week 1-2', 'Identify one bottleneck and create a fix plan'],
+                ['Reach out to 5 potential collaborators or partners', 'Create a simple referral system for happy clients', 'Set up basic analytics tracking'],
+                ['Post 2x more content than last week', 'Respond to every comment/message within 4 hours', 'Study a competitor 6 months ahead of you'],
+                ['Set a goal to double your audience this week', 'Create a compilation of your best work', 'Optimize your bio with clear value proposition'],
+                ['Launch a weekend challenge or special offer', 'Network in 3 online communities in your niche', 'Ask 5 clients for testimonials'],
+                ['Create your first case study or success story', 'Set up an automated welcome message', 'Post a behind-the-scenes look at your process'],
+                ['Document top 3 wins and 3 improvements this week', 'Set specific numeric goals for Week 4', 'Celebrate with a reward for yourself']
+            ]
+        },
+        4: {
+            theme: 'Systems & Automation',
+            tasks: [
+                ['Create and follow a daily routine schedule', 'Set up templates for your 3 most common tasks', 'Start using a project management tool'],
+                ['Schedule social media posts for the week', 'Create email templates for common responses', 'Set up automatic payment reminders'],
+                ['Document your entire workflow step-by-step', 'Create a client onboarding checklist', 'Automate one repetitive task using free tools'],
+                ['Build a content calendar for next month', 'Create a swipe file of best-performing content', 'Set up keyboard shortcuts'],
+                ['Batch all similar tasks on the same day', 'Plan what help you need to hire first', 'Create Standard Operating Procedures'],
+                ['Set up a CRM to track leads and clients', 'Organize your files with a naming system', 'Create a pricing calculator'],
+                ['Eliminate 3 time-wasters from your routine', 'Calculate your effective hourly rate', 'Pre-schedule 80% of next week']
+            ]
+        },
+        5: {
+            theme: 'Advanced Techniques',
+            tasks: [
+                ['Complete one lesson in an advanced course', 'Study what the top 1% in your industry do', 'Try one technique you have been avoiding'],
+                ['A/B test two versions of your main offer', 'Learn SEO basics and optimize 5 posts', 'Master one new tool in your workflow'],
+                ['Create a premium tier of your service', 'Develop a signature method or framework', 'Collaborate with someone more experienced'],
+                ['Research certifications in your field', 'Pitch to speak on a podcast or guest post', 'Create a lead magnet or free resource'],
+                ['Publish an advanced tutorial in your niche', 'Set up simple retargeting to warm audience', 'Track 5 key metrics daily'],
+                ['Build an upsell into your main process', 'Improve your sales page or pitch', 'Add ethical urgency to your offers'],
+                ['Identify next 3 skills to learn', 'Plan a signature project showcasing expertise', 'Document all new techniques learned']
+            ]
+        },
+        6: {
+            theme: 'Monetization Mastery',
+            tasks: [
+                ['Raise your prices by minimum 20%', 'Create 3-tier pricing options', 'Calculate your customer acquisition cost'],
+                ['Launch a high-ticket offer ($500+)', 'Create a payment plan option', 'Set up referral commissions'],
+                ['Bundle services into a valuable package', 'Create a fixed-scope productized service', 'Add a subscription or retainer option'],
+                ['Contact 10 past clients for repeat business', 'Cross-sell to existing clients', 'Create a Done For You premium option'],
+                ['Set a monthly revenue goal and track daily', 'Double down on most profitable offering', 'Remove or reprice low-margin services'],
+                ['Launch a limited-time promotion', 'Create bonuses for fast action takers', 'Develop a VIP priority tier'],
+                ['Calculate customer lifetime value', 'Review what brought 80% of revenue', 'Set income goal for next month']
+            ]
+        },
+        7: {
+            theme: 'Community Building',
+            tasks: [
+                ['Start or grow an email newsletter', 'Create a private group for your audience', 'Host a live Q&A session'],
+                ['Feature community members publicly', 'Create a branded hashtag', 'Respond personally to every DM today'],
+                ['Launch a challenge for your followers', 'Give away $100+ in value free', 'Interview a successful community member'],
+                ['Create exclusive content for loyal fans', 'Host a virtual meetup or event', 'Start a members-only tier'],
+                ['Partner with 3 complementary creators', 'Launch a user-generated content campaign', 'Create an ambassador program'],
+                ['Write thank-you notes to top 20 clients', 'Create a client appreciation event', 'Build a recognition system'],
+                ['Survey your community for feedback', 'Plan monthly events for next 3 months', 'Celebrate community milestones publicly']
+            ]
+        },
+        8: {
+            theme: 'Optimization',
+            tasks: [
+                ['Audit your funnel - fix #1 drop-off point', 'Speed test and optimize your website', 'Simplify your offering messaging'],
+                ['Test two versions of your signup flow', 'Improve first 24 hours of client experience', 'Reduce time-to-value for new clients'],
+                ['Fix top 3 customer complaints', 'Streamline your delivery process', 'Get response time under 2 hours'],
+                ['Optimize your #1 traffic source', 'Improve your best-selling product', 'Cut costs by 10% without quality loss'],
+                ['Remove friction from payment process', 'Create better onboarding documentation', 'Speed up project turnaround time'],
+                ['Test 5 different headlines on key pages', 'Improve mobile experience', 'Optimize top 5 pages for search'],
+                ['Measure all improvements made', 'Document what worked best', 'Set targets for next optimization round']
+            ]
+        },
+        9: {
+            theme: 'Expansion',
+            tasks: [
+                ['Identify a parallel niche to expand into', 'Research new geographic markets', 'Find a partner in adjacent space'],
+                ['Launch on a new platform', 'Create content in a new format', 'Adapt content for new audience'],
+                ['Test paid ads with $50-100 budget', 'Pitch to 5 potential B2B clients', 'Apply to speak at an industry event'],
+                ['Create a course or educational product', 'License your methods to others', 'White-label your service'],
+                ['Launch virtually in a new region', 'Create strategic cross-promotion deal', 'Pitch to larger companies'],
+                ['Create a template others can use', 'Build multiple income streams', 'Connect with industry influencers'],
+                ['Map out 12-month expansion plan', 'Prioritize highest ROI expansion', 'Set 3 expansion goals for next quarter']
+            ]
+        },
+        10: {
+            theme: 'Brand Authority',
+            tasks: [
+                ['Get featured in a publication or podcast', 'Write a thought leadership article', 'Get a testimonial from a recognized name'],
+                ['Create a professional press kit', 'Apply for industry awards', 'Publish a detailed case study'],
+                ['Host a webinar (100+ attendees goal)', 'Get verified on social platforms', 'Create a signature quote or philosophy'],
+                ['Contribute to industry discussions', 'Mentor someone newer in your field', 'Join a high-level mastermind group'],
+                ['Create an annual industry insight', 'Build relationships with journalists', 'Develop a personal brand style guide'],
+                ['Speak at a meetup or summit', 'Create shareable graphics with insights', 'Get endorsed by industry figures'],
+                ['Audit and clean up online presence', 'Plan 3-month thought leadership calendar', 'Identify 5 authority opportunities']
+            ]
+        },
+        11: {
+            theme: 'Passive Income',
+            tasks: [
+                ['Create and launch a digital product', 'Set up evergreen sales funnel', 'Create a template or toolkit to sell'],
+                ['Launch an affiliate marketing strategy', 'Record and package course content', 'Set up print-on-demand merchandise'],
+                ['Create membership with recurring revenue', 'License assets you already own', 'Build passive stream from existing audience'],
+                ['Set up advertising revenue on content', 'Create a paid newsletter tier', 'Develop sponsorship packages'],
+                ['Write an ebook or guide to sell', 'Monetize old content you created', 'Create income-generating partnerships'],
+                ['Set up recurring commission relationships', 'Build referral incentives into products', 'Create automated webinar funnel'],
+                ['Calculate monthly passive income potential', 'Prioritize highest leverage passive income', 'Set passive income goal for 3 months']
+            ]
+        },
+        12: {
+            theme: 'Long-term Vision',
+            tasks: [
+                ['Write your 1-year business vision', 'Set 3 major goals for next 12 months', 'Identify who you need to become'],
+                ['Create a 90-day action plan', 'Design your ideal work week schedule', 'Plan for sustainable work-life balance'],
+                ['Document everything learned in 12 weeks', 'Create systems that run without you', 'Identify what to stop, start, continue'],
+                ['Build a team hiring plan', 'Set up backup and succession systems', 'Plan for scaling without burnout'],
+                ['Calculate what income level is enough', 'Design your exit strategy or legacy', 'Create a charitable giving plan'],
+                ['Plan a celebration for completing 12 weeks', 'Share your journey to inspire others', 'Find accountability for next 12 weeks'],
+                ['Final reflection on surprises and lessons', 'Update all goals for next quarter', 'Schedule your next 12-week journey']
+            ]
+        }
     };
 
     return Array.from({ length: 10 }, (_, i) => {
         const weekNum = i + 3;
+        const weekData = weekObjectives[weekNum];
         return {
             id: weekNum,
             title: `Week ${weekNum}`,
-            description: weekThemes[weekNum],
+            description: weekData.theme,
             isLocked: true,
             isCompleted: false,
             days: Array.from({ length: 7 }, (_, d) => ({
                 day: d + 1,
                 tasks: [
-                    task(weekNum, d + 1, 1, `${weekThemes[weekNum]} - Primary Objective`, 75),
-                    task(weekNum, d + 1, 2, `${weekThemes[weekNum]} - Execution Task`, 50),
-                    task(weekNum, d + 1, 3, `${weekThemes[weekNum]} - Review & Iterate`, 25)
+                    task(weekNum, d + 1, 1, weekData.tasks[d][0], 75),
+                    task(weekNum, d + 1, 2, weekData.tasks[d][1], 50),
+                    task(weekNum, d + 1, 3, weekData.tasks[d][2], 25)
                 ]
             }))
         };

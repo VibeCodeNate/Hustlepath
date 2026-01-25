@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
-import { Sparkles, User, LogOut, Settings, ShoppingBag, Coins } from 'lucide-react';
+import { Sparkles, User, LogOut, Settings, ShoppingBag, Coins, Zap } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
@@ -48,9 +48,25 @@ export function Navbar() {
                     <a href="/#pricing" className="hover:text-foreground transition-colors">Pricing</a>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {user ? (
                         <>
+                            {/* SHOP - Prominent Button with Animation */}
+                            <Link to="/shop">
+                                <Button
+                                    size="sm"
+                                    className="relative bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold hover:from-cyan-400 hover:to-blue-500 shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] animate-pulse-subtle"
+                                >
+                                    <ShoppingBag className="w-4 h-4 mr-2" />
+                                    Shop
+                                    <Zap className="w-3 h-3 ml-1 text-yellow-300" />
+                                    {/* New badge */}
+                                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full animate-bounce">
+                                        NEW
+                                    </span>
+                                </Button>
+                            </Link>
+
                             {/* Hustle Bucks */}
                             <Link
                                 to="/shop"
@@ -58,16 +74,6 @@ export function Navbar() {
                             >
                                 <Coins className="w-4 h-4 text-yellow-400" />
                                 <span className="text-sm font-bold text-yellow-400">{hustleBucks}</span>
-                            </Link>
-
-                            {/* Shop */}
-                            <Link
-                                to="/shop"
-                                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-cyan-400 transition-colors"
-                                title="Shop"
-                            >
-                                <ShoppingBag className="w-4 h-4" />
-                                <span className="hidden sm:inline">Shop</span>
                             </Link>
 
                             {/* Profile */}

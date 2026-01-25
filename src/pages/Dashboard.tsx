@@ -346,15 +346,16 @@ export function Dashboard() {
                                 ) : (
                                     <Rocket className="mr-2 w-4 h-4" />
                                 )}
-                                {!canCheckIn ? 'Checked In!' : <><span className="hidden sm:inline">Daily </span>Check-in</>}
+                                {!canCheckIn ? (
+                                    <>
+                                        <span className="hidden sm:inline">Done! </span>
+                                        <Clock className="w-3 h-3 mx-1" />
+                                        {countdownTimer.hours}h {countdownTimer.minutes}m
+                                    </>
+                                ) : (
+                                    <><span className="hidden sm:inline">Daily </span>Check-in</>
+                                )}
                             </Button>
-                            {/* Countdown timer */}
-                            {!canCheckIn && (
-                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    Resets in {countdownTimer.hours}h {countdownTimer.minutes}m
-                                </div>
-                            )}
                         </div>
                     </div>
                 </motion.div>
