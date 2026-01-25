@@ -51,9 +51,15 @@ serve(async (req) => {
             auth: { autoRefreshToken: false, persistSession: false }
         })
 
-        // Delete user data from all tables first
+        // Delete user data from all tables explicitly to avoid any potential FK issues
+        // (Even though schema has ON DELETE CASCADE, explicit delete is safer/clearer)
+        await adminClient.from('roadmap_progress').delete().eq('user_id', user.id)
+        await adminClient.from('post_likes').delete().eq('user_id', user.id)
+        await adminClient.from('post_comments').delete().eq('user_id', user.id)
         await adminClient.from('user_progress').delete().eq('user_id', user.id)
         await adminClient.from('community_posts').delete().eq('user_id', user.id)
+
+        // Finally delete profile (which cascades to others if missed)
         await adminClient.from('profiles').delete().eq('id', user.id)
 
         // Delete the auth user using Admin API
