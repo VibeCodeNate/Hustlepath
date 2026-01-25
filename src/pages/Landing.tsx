@@ -233,7 +233,7 @@ export function Landing() {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-200 to-white drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+                            className="text-4xl md:text-6xl font-bold mb-6 pb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-200 to-white drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]"
                         >
                             Precision Engineering
                         </motion.h2>
@@ -358,7 +358,7 @@ export function Landing() {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-fuchsia-200 to-white"
+                            className="text-4xl md:text-6xl font-bold mb-6 pb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-fuchsia-200 to-white"
                         >
                             Everything You Need to Win
                         </motion.h2>
@@ -661,7 +661,7 @@ export function Landing() {
                         <span className="font-bold tracking-tighter">HustlePath</span>
                     </div>
                     <p className="text-muted-foreground text-sm">
-                        © 2024 HustlePath. Built for builders.
+                        © 2026 HustlePath. Built for builders.
                     </p>
                 </div>
             </footer>
