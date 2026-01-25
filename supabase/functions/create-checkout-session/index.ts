@@ -25,15 +25,17 @@ Deno.serve(async (req: Request) => {
             httpClient: Stripe.createFetchHttpClient(),
         });
 
-        // Get the origin from the request for redirect URLs
-        const origin = req.headers.get('origin') || 'http://localhost:5173';
-
-        // Parse request body for optional metadata
+        // Parse request body
         let hustleTitle = 'HustlePath Pro';
+        let returnUrl = req.headers.get('origin') || 'http://localhost:5173';
+
         try {
             const body = await req.json();
             if (body.hustleTitle) {
                 hustleTitle = body.hustleTitle;
+            }
+            if (body.return_url) {
+                returnUrl = body.return_url;
             }
         } catch {
             // No body or invalid JSON, use defaults
@@ -58,8 +60,8 @@ Deno.serve(async (req: Request) => {
                 },
             ],
             mode: 'subscription',
-            success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/explainer`,
+            success_url: `${returnUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${returnUrl}/explainer`,
             metadata: {
                 hustleTitle,
             },

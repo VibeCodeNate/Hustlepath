@@ -231,7 +231,10 @@ export function Results() {
         setProcessingUpgrade(true);
         try {
             const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                body: { hustleTitle: 'HustlePath Pro Upgrade' }
+                body: {
+                    hustleTitle: 'HustlePath Pro Upgrade',
+                    return_url: window.location.origin
+                }
             });
 
             if (error) throw error;

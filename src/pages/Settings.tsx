@@ -14,7 +14,10 @@ function UpgradeButton() {
         setLoading(true);
         try {
             const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                body: { hustleTitle: 'HustlePath Pro Upgrade' }
+                body: {
+                    hustleTitle: 'HustlePath Pro Upgrade',
+                    return_url: window.location.origin
+                }
             });
 
             if (error) throw error;
@@ -41,7 +44,10 @@ function ManageSubscriptionButton({ email }: { email: string }) {
         setLoading(true);
         try {
             const { data, error } = await supabase.functions.invoke('create-portal-session', {
-                body: { email }
+                body: {
+                    email,
+                    return_url: window.location.origin
+                }
             });
 
             if (error) throw error;
