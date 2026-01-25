@@ -1,4 +1,4 @@
-import { NicheType } from './nicheRoadmaps';
+import type { NicheType } from './nicheRoadmaps';
 
 export interface DeepDiveContent {
     title: string;
