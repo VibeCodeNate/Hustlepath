@@ -13,7 +13,9 @@ import {
     Sparkles,
     Shield,
     Rocket,
-    Loader2
+    Loader2,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 
 interface SignUpProps {
@@ -28,6 +30,7 @@ export function SignUp({ initialMode = 'signup', allowToggle = true }: SignUpPro
 
     const [isLogin, setIsLogin] = useState(initialMode === 'login');
     const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
@@ -35,8 +38,9 @@ export function SignUp({ initialMode = 'signup', allowToggle = true }: SignUpPro
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    // Get the redirect path from location state (e.g., results page after assessment)
-    const from = (location.state as { from?: string })?.from || '/dashboard';
+    // Get the redirect path and state from location
+    const { from, ...forwardState } = (location.state as { from?: string;[key: string]: any }) || {};
+    const redirectPath = from || '/dashboard';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -79,7 +83,8 @@ export function SignUp({ initialMode = 'signup', allowToggle = true }: SignUpPro
                 const { error } = await signUp(email, password, username);
                 if (error) throw error;
             }
-            navigate(from, { replace: true });
+            // Navigate to original destination with preserved state (e.g. quiz answers)
+            navigate(redirectPath, { replace: true, state: forwardState });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -172,14 +177,21 @@ export function SignUp({ initialMode = 'signup', allowToggle = true }: SignUpPro
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                                         <input
-                                            type="password"
+                                            type={showPassword ? "text" : "password"}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             placeholder="••••••••"
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-12 text-white placeholder:text-white/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
                                             required={!isForgotPassword}
                                             minLength={6}
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
                                     </div>
                                 </div>
                             )}

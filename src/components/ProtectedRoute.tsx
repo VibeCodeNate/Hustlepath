@@ -28,8 +28,8 @@ export function ProtectedRoute({ children, requirePro = false }: ProtectedRouteP
     }
 
     if (requirePro && !profile?.is_pro) {
-        // Redirect to upgrade page or show paywall
-        return <Navigate to="/upgrade" state={{ from: location.pathname }} replace />;
+        // Redirect to results (upgrade page)
+        return <Navigate to="/results" state={{ from: location.pathname }} replace />;
     }
 
     return <>{children}</>;

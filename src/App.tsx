@@ -41,7 +41,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/explainer" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Explainer />
               </ProtectedRoute>
             } />
@@ -51,27 +51,27 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Dashboard />
               </ProtectedRoute>
             } />
             <Route path="/roadmap" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Roadmap />
               </ProtectedRoute>
             } />
             <Route path="/character" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <CharacterPage />
               </ProtectedRoute>
             } />
             <Route path="/community" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Community />
               </ProtectedRoute>
             } />
             <Route path="/resources" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Resources />
               </ProtectedRoute>
             } />
@@ -81,22 +81,22 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/extra-objectives" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <ExtraObjectives />
               </ProtectedRoute>
             } />
             <Route path="/earnings" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Earnings />
               </ProtectedRoute>
             } />
             <Route path="/goals" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Goals />
               </ProtectedRoute>
             } />
             <Route path="/shop" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Shop />
               </ProtectedRoute>
             } />
@@ -106,7 +106,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/profile/:userId" element={
-              <ProtectedRoute>
+              <ProtectedRoute requirePro={true}>
                 <Profile />
               </ProtectedRoute>
             } />

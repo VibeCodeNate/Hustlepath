@@ -4,8 +4,9 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { openai } from '../lib/openai';
 import { fireConfetti } from '../lib/confetti';
-import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock } from 'lucide-react';
+import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../lib/auth';
 
 interface Recommendation {
     title: string;
@@ -28,7 +29,18 @@ interface Recommendation {
 export function Results() {
     const location = useLocation();
     const navigate = useNavigate();
-    const answers = location.state?.answers;
+    const { user, profile } = useAuth();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+    // Try to get answers from location state, fallback to sessionStorage, then profile
+    const [answers, setAnswers] = useState<any>(() => {
+        if (location.state?.answers) return location.state.answers;
+
+        const stored = sessionStorage.getItem('hustlepath_answers');
+        if (stored) return JSON.parse(stored);
+
+        return null; // Will check profile in useEffect
+    });
 
     const [loading, setLoading] = useState(true);
     const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
@@ -36,22 +48,34 @@ export function Results() {
     const [rerollsLeft, setRerollsLeft] = useState(1);
     const [excludedTitles, setExcludedTitles] = useState<string[]>([]);
 
+    useEffect(() => {
+        if (!answers && profile?.quiz_answers) {
+            setAnswers(profile.quiz_answers);
+        }
+    }, [profile, answers]);
+
     const fetchRecommendations = async (retryTitles: string[] = []) => {
+        // If we don't have answers yet (waiting for profile), don't fetch or error yet
+        if (!answers && !profile?.quiz_answers) return;
+
+        const answersToUse = answers || profile?.quiz_answers;
+        if (!answersToUse) return;
+
         setLoading(true);
         try {
             const prompt = `
                 Act as a sophisticated business consultant and video game quest giver. Based on this profile, generate 3 "Side Hustle Quests" that are perfect matches.
 
                 User Profile:
-                - Capital: ${answers.capital}
-                - Time: ${answers.time}
-                - Goal: ${answers.goal}
-                - Interests: ${answers.interest}
-                - Tech Skill: ${answers.tech_level}
-                - Social: ${answers.social_preference}
-                - Hobbies: ${answers.hobbies}
-                - Frustration: ${answers.frustration}
-                - Vehicle Access: ${answers.vehicle}
+                - Capital: ${answersToUse.capital}
+                - Time: ${answersToUse.time}
+                - Goal: ${answersToUse.goal}
+                - Interests: ${answersToUse.interest}
+                - Tech Skill: ${answersToUse.tech_level}
+                - Social: ${answersToUse.social_preference}
+                - Hobbies: ${answersToUse.hobbies}
+                - Frustration: ${answersToUse.frustration}
+                - Vehicle Access: ${answersToUse.vehicle}
 
                 ${retryTitles.length > 0 ? `CRITICAL: Do NOT include these previously suggested quests: ${retryTitles.join(', ')}` : ''}
 
@@ -132,13 +156,23 @@ export function Results() {
     };
 
     useEffect(() => {
-        if (!answers) {
-            navigate('/assessment');
-            return;
+        // If answers are present, fetch
+        if (answers) {
+            fetchRecommendations();
         }
-        fetchRecommendations();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [answers, navigate]);
+        // If no answers and no profile (or profile has empty answers), and not loading profile...
+        // Wait, we need to handle the case where answers ARE null initially but load later
+    }, [answers]);
+
+    // Safety redirect primarily for guests or if data truly lost
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (!answers && !loading && !profile) {
+                navigate('/assessment');
+            }
+        }, 2000); // Give profile time to load
+        return () => clearTimeout(timer);
+    }, [answers, loading, profile, navigate]);
 
     const handleReroll = () => {
         if (rerollsLeft > 0) {
@@ -148,6 +182,12 @@ export function Results() {
     };
 
     const handleStartQuest = (quest: Recommendation) => {
+        // Payment Wall
+        if (!profile?.is_pro) {
+            setShowUpgradeModal(true);
+            return;
+        }
+
         fireConfetti();
         // Small delay to let confetti pop before nav
         setTimeout(() => {
@@ -425,6 +465,82 @@ export function Results() {
                         </AnimatePresence>
                     </div>
                 )}
+            </div>
+
+            {/* Upgrade Modal */}
+            <AnimatePresence>
+                {showUpgradeModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+                        onClick={() => setShowUpgradeModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-zinc-900 border border-yellow-500/30 rounded-3xl p-8 w-full max-w-md text-center relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500" />
+                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-yellow-500/20 blur-[60px] rounded-full" />
+
+                            <button
+                                onClick={() => setShowUpgradeModal(false)}
+                                className="absolute top-4 right-4 p-2 text-white/50 hover:text-white"
+                            >
+                                <Lock className="w-5 h-5" />
+                            </button>
+
+                            <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
+                                <Trophy className="w-8 h-8 text-yellow-400" />
+                            </div>
+
+                            <h2 className="text-2xl font-bold mb-2">Unlock Full Access</h2>
+                            <p className="text-muted-foreground mb-6">
+                                Ready to start your mission? Upgrade to Pro to access your custom roadmap, community, shop, and more.
+                            </p>
+
+                            <div className="space-y-3 mb-8 text-left bg-black/20 p-4 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-green-500/20 p-1 rounded-full"><CheckCircle2 className="w-4 h-4 text-green-400" /></div>
+                                    <span className="text-sm">Detailed Weekly Step-by-Step Plans</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-green-500/20 p-1 rounded-full"><CheckCircle2 className="w-4 h-4 text-green-400" /></div>
+                                    <span className="text-sm">Access to Private Community</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-green-500/20 p-1 rounded-full"><CheckCircle2 className="w-4 h-4 text-green-400" /></div>
+                                    <span className="text-sm">Earn Real XP & Rewards</span>
+                                </div>
+                            </div>
+
+                            <Button
+                                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold h-14 text-lg hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-shadow"
+                                onClick={() => {
+                                    // Placeholder for Stripe logic
+                                    window.open('https://buy.stripe.com/test_placeholder', '_blank');
+                                }}
+                            >
+                                Upgrade Now - $9.99
+                            </Button>
+
+                            <button
+                                onClick={() => setShowUpgradeModal(false)}
+                                className="mt-4 text-sm text-white/40 hover:text-white transition-colors"
+                            >
+                                Maybe later
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Additional Import for CheckCircle2 */}
+            <div style={{ display: 'none' }}>
             </div>
         </div>
     );

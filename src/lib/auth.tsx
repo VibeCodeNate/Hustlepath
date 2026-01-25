@@ -12,6 +12,7 @@ interface Profile {
     hustle_locked_until: string | null;
     hustle_started_at: string | null;
     is_pro: boolean;
+    quiz_answers: any;
 }
 
 interface UserProgress {
@@ -168,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 data: {
                     username,
                     display_name: username,
+                    quiz_answers: (window.history.state?.usr?.answers || window.history.state?.state?.answers || sessionStorage.getItem('hustlepath_answers') ? JSON.parse(sessionStorage.getItem('hustlepath_answers')!) : null)
                 },
             },
         });
