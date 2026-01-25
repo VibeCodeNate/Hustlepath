@@ -72,7 +72,10 @@ const RAW_QUESTIONS: Question[] = [
             "Sales, Marketing & Persuasion",
             "Physical Services / Hands-on",
             "Writing & Copywriting",
-            "Teaching, Coaching & Mentoring"
+            "Teaching, Coaching & Mentoring",
+            "Beauty & Wellness",
+            "Finance & Investing",
+            "Real Estate & Property"
         ],
         key: "interest"
     },

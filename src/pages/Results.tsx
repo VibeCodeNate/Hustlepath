@@ -81,7 +81,7 @@ export function Results() {
 
                 Pool of Options (Tailor the title/angle to the user):
                 - Baking business / Custom Dessert Orders
-                - Digital products (E-books, Templates)
+                - Digital products (E-books, Notion Templates)
                 - Monetize a YouTube channel (Content Creation)
                 - Start a blog or newsletter
                 - Secure social media sponsorships (UGC/Influencer)
@@ -96,13 +96,13 @@ export function Results() {
                 - Advise eco-friendly businesses (Consulting)
                 - Design and sell t-shirts (Print on Demand)
                 - Develop a clothing line
-                - Sell your photography
+                - Sell your photography / Videography
                 - Voice-over artist
                 - Virtual interior design consultation
                 - Create handmade goods (Etsy)
                 - IRL or online tutor
                 - Transcribe or translate content
-                - Teach fitness classes online
+                - Teach fitness classes online (Yoga/Pilates)
                 - Deliver packages (Amazon Flex/Courier)
                 - Deliver groceries (Instacart/DoorDash)
                 - Rent out your home or spare room (Airbnb)
@@ -111,6 +111,12 @@ export function Results() {
                 - Mow lawns / Landscaping
                 - Give neighborhood tours (Experiences)
                 - Pet-sitting and dog walking
+                - Lash Technician (Eyelash Extensions)
+                - Day Trading (Stock Market / Forex)
+                - Crypto Trading & Investing
+                - Real Estate Wholesaling / Investing
+                - Appointment Setting (Remote Sales)
+                - Cold Calling / Remote Sales Closing
 
                 For EACH of the 3 result objects, you must provide a COMPREHENSIVE GUIDE (approx 200 words total content per item).
                 Return a JSON array of 3 objects with these EXACT keys:

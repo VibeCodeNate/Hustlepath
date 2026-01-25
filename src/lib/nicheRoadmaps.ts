@@ -19,6 +19,11 @@ export type NicheType =
     | 'affiliate-marketing'
     | 'tutoring'
     | 'photography'
+    | 'lash-tech'
+    | 'digital-products'
+    | 'day-trading'
+    | 'crypto'
+    | 'real-estate'
     | 'general';
 
 export interface NicheInfo {
@@ -45,6 +50,11 @@ export const NICHE_INFO: NicheInfo[] = [
     { id: 'affiliate-marketing', name: 'Affiliate Marketing', icon: '🔗', description: 'Commission-based promotion', color: 'lime' },
     { id: 'tutoring', name: 'Tutoring', icon: '📚', description: 'Online education', color: 'sky' },
     { id: 'photography', name: 'Photography', icon: '📷', description: 'Photo/video services', color: 'slate' },
+    { id: 'lash-tech', name: 'Lash Tech', icon: '👁️', description: 'Eyelash extensions', color: 'rose' },
+    { id: 'digital-products', name: 'Digital Products', icon: '💾', description: 'Templates, E-books, Courses', color: 'violet' },
+    { id: 'day-trading', name: 'Day Trading', icon: '📈', description: 'Stock/Forex markets', color: 'emerald' },
+    { id: 'crypto', name: 'Crypto', icon: '₿', description: 'Web3 & Investing', color: 'yellow' },
+    { id: 'real-estate', name: 'Real Estate', icon: '🏠', description: 'Wholesaling & Investing', color: 'blue' },
 ];
 
 // Helper to create a task with unique ID and coin reward
@@ -1382,6 +1392,591 @@ function generateRemainingWeeks(_niche: string): Week[] {
     });
 }
 
+// ============================================
+// LASH TECH ROADMAP
+// ============================================
+export const LASH_TECH_ROADMAP: Week[] = [
+    {
+        id: 1, title: 'Week 1', description: 'Certification & Basics',
+        isLocked: false, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(1, 1, 1, 'Research state licensing requirements', 50),
+                    task(1, 1, 2, 'Purchase a mannequin head practice kit', 50),
+                    task(1, 1, 3, 'Watch 3 comprehensive lash mapping tutorials', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(1, 2, 1, 'Practice isolation technique (1 hour)', 75),
+                    task(1, 2, 2, 'Learn about different lash curls (C, D, CC)', 50),
+                    task(1, 2, 3, 'Set up your sanitation station', 50)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(1, 3, 1, 'Practice glue dipping and placement', 75),
+                    task(1, 3, 2, 'Complete a full set on mannequin', 100),
+                    task(1, 3, 3, 'Take photos to track progress', 25)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(1, 4, 1, 'Learn about eye shapes and styling', 50),
+                    task(1, 4, 2, 'Create your pricing menu', 50),
+                    task(1, 4, 3, 'Create a consent form template', 50)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(1, 5, 1, 'Set up your lash bed/chair space', 75),
+                    task(1, 5, 2, 'Practice removal technique', 50),
+                    task(1, 5, 3, 'Find 3 friends to be free models', 75)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(1, 6, 1, 'Do your first live model set (expect 3+ hours)', 150),
+                    task(1, 6, 2, 'Take high quality before/after photos', 50),
+                    task(1, 6, 3, 'Ask model for honest feedback on comfort', 50)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(1, 7, 1, 'Create Instagram page for your business', 50),
+                    task(1, 7, 2, 'Post your first model results', 50),
+                    task(1, 7, 3, 'Clean and sanitize all tools', 50)
+                ]
+            }
+        ]
+    },
+    {
+        id: 2, title: 'Week 2', description: 'Speed & Portfolio',
+        isLocked: true, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(2, 1, 1, 'Do model set #2 (Goal: < 3 hours)', 100),
+                    task(2, 1, 2, 'Experiment with a wispy map', 50),
+                    task(2, 1, 3, 'Post educational content on lash care', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(2, 2, 1, 'Do model set #3', 100),
+                    task(2, 2, 2, 'Create "Aftercare" cards for clients', 75),
+                    task(2, 2, 3, 'Research best retention tips', 50)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(2, 3, 1, 'Set up booking site (Acuity/Square)', 75),
+                    task(2, 3, 2, 'Define your policy (deposits, lates)', 50),
+                    task(2, 3, 3, 'Edit your portfolio photos', 50)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(2, 4, 1, 'Do model set #4', 100),
+                    task(2, 4, 2, 'Ask models to post and tag you', 50),
+                    task(2, 4, 3, 'Engage with local beauty accounts', 50)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(2, 5, 1, 'Open books for discounted "Intro" rates', 75),
+                    task(2, 5, 2, 'Create a "Book Now" highlight', 50),
+                    task(2, 5, 3, 'Stock up on disposables', 50)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(2, 6, 1, 'Practice making handmade volume fans', 75),
+                    task(2, 6, 2, 'Watch tutorials on difficult lashes', 50),
+                    task(2, 6, 3, 'Analyze your retention from Week 1 models', 50)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(2, 7, 1, 'Review week income/expenses', 50),
+                    task(2, 7, 2, 'Plan content for next week', 50),
+                    task(2, 7, 3, 'Rest your hands and back', 25)
+                ]
+            }
+        ]
+    },
+    ...generateRemainingWeeks('lash-tech')
+];
+
+// ============================================
+// DIGITAL PRODUCTS ROADMAP
+// ============================================
+export const DIGITAL_PRODUCTS_ROADMAP: Week[] = [
+    {
+        id: 1, title: 'Week 1', description: 'Ideation & Creation',
+        isLocked: false, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(1, 1, 1, 'Analyze top sellers on Etsy/Gumroad', 50),
+                    task(1, 1, 2, 'Identify a problem you can solve with a file', 50),
+                    task(1, 1, 3, 'Validate topic using Google Trends/TikTok', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(1, 2, 1, 'Outline the content of your product', 75),
+                    task(1, 2, 2, 'Choose your format (PDF, Notion, Video)', 50),
+                    task(1, 2, 3, 'Create a moodboard/design inspo', 50)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(1, 3, 1, 'Create the "MVP" version of your product', 100),
+                    task(1, 3, 2, 'Design a clean cover image', 50),
+                    task(1, 3, 3, 'Write the "How To Use" instructions', 50)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(1, 4, 1, 'Complete the final product design', 100),
+                    task(1, 4, 2, 'Export and test all files/links', 50),
+                    task(1, 4, 3, 'Get one friend to test/review it', 50)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(1, 5, 1, 'Set up a Gumroad or Stan Store account', 75),
+                    task(1, 5, 2, 'Write compelling product description', 75),
+                    task(1, 5, 3, 'Set your price (start low or free)', 50)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(1, 6, 1, 'Create 3 mockups (product in use)', 50),
+                    task(1, 6, 2, 'Create a "Launch" graphic for social', 50),
+                    task(1, 6, 3, 'Plan 3 days of launch content', 50)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(1, 7, 1, 'Publish your product live', 100),
+                    task(1, 7, 2, 'Post launch announcement on all socials', 75),
+                    task(1, 7, 3, 'DM 10 people asking for feedback', 50)
+                ]
+            }
+        ]
+    },
+    {
+        id: 2, title: 'Week 2', description: 'Marketing & Traffic',
+        isLocked: true, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(2, 1, 1, 'Create a TikTok/Reel showing outcome', 75),
+                    task(2, 1, 2, 'Optimize your bio link', 25),
+                    task(2, 1, 3, 'Check your store analytics', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(2, 2, 1, 'Create a "hooks" document for marketing', 50),
+                    task(2, 2, 2, 'Post an educational video relating to niche', 75),
+                    task(2, 2, 3, 'Engage with 20 influencers in your niche', 50)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(2, 3, 1, 'Create a lead magnet (freebie version)', 100),
+                    task(2, 3, 2, 'Set up email auto-delivery', 75),
+                    task(2, 3, 3, 'Add upsell to PAID version', 50)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(2, 4, 1, 'Post social proof/reviews', 50),
+                    task(2, 4, 2, 'Film a "Day in the life" using your product', 75),
+                    task(2, 4, 3, 'Reply to all comments', 25)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(2, 5, 1, 'Analyze traffic sources', 50),
+                    task(2, 5, 2, 'Test a different price point or bundle', 50),
+                    task(2, 5, 3, 'Reach out for a collab/shoutout', 75)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(2, 6, 1, 'Create Pinterest pins for your product', 75),
+                    task(2, 6, 2, 'Write a blog post/article linking to it', 100),
+                    task(2, 6, 3, 'Update product FAQ based on questions', 50)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(2, 7, 1, 'Review total sales/downloads', 50),
+                    task(2, 7, 2, 'Plan product #2 or update #1', 50),
+                    task(2, 7, 3, 'Celebrate your first dollar online', 25)
+                ]
+            }
+        ]
+    },
+    ...generateRemainingWeeks('digital-products')
+];
+
+// ============================================
+// DAY TRADING ROADMAP
+// ============================================
+export const DAY_TRADING_ROADMAP: Week[] = [
+    {
+        id: 1, title: 'Week 1', description: 'Education & Setup',
+        isLocked: false, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(1, 1, 1, 'Choose market (Stocks, Forex, Crypto, Futures)', 50),
+                    task(1, 1, 2, 'Read "Trading in the Zone" summary', 50),
+                    task(1, 1, 3, 'Learn candlestick basics', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(1, 2, 1, 'Set up TradingView account', 50),
+                    task(1, 2, 2, 'Learn Support & Resistance', 75),
+                    task(1, 2, 3, 'Mark key levels on 5 charts', 50)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(1, 3, 1, 'Open a PAPER trading account (Demo)', 75),
+                    task(1, 3, 2, 'Place your first dummy trade', 50),
+                    task(1, 3, 3, 'Learn about "Risk to Reward" ratio', 75)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(1, 4, 1, 'Study 3 common chart patterns', 50),
+                    task(1, 4, 2, 'Create a trading plan document', 75),
+                    task(1, 4, 3, 'Define your max loss per day rules', 75)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(1, 5, 1, 'Take 5 paper trades using 1 strategy', 100),
+                    task(1, 5, 2, 'Journal each trade (Entry, Exit, Why)', 50),
+                    task(1, 5, 3, 'Review winning vs losing trades', 50)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(1, 6, 1, 'Learn about Market Structure', 75),
+                    task(1, 6, 2, 'Backtest your strategy on past data', 100),
+                    task(1, 6, 3, 'Watch a live trading session recording', 50)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(1, 7, 1, 'Review your week\'s PnL (Paper)', 50),
+                    task(1, 7, 2, 'Identify your biggest emotional mistake', 50),
+                    task(1, 7, 3, 'Prepare watchlist for next week', 50)
+                ]
+            }
+        ]
+    },
+    {
+        id: 2, title: 'Week 2', description: 'Strategy Refinement',
+        isLocked: true, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(2, 1, 1, 'Paper trade the market open', 75),
+                    task(2, 1, 2, 'Stick strictly to 2:1 Risk/Reward', 75),
+                    task(2, 1, 3, 'Journal your emotions during trade', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(2, 2, 1, 'Learn about Indicators (RSI, MACD, VWAP)', 50),
+                    task(2, 2, 2, 'Decide if you are Trend or Reversal trader', 50),
+                    task(2, 2, 3, 'Execute 3 perfect setup trades (Paper)', 75)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(2, 3, 1, 'Study "Position Sizing" calculation', 75),
+                    task(2, 3, 2, 'Create a "Pre-flight checklist"', 50),
+                    task(2, 3, 3, 'Paper trade with correct position size', 75)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(2, 4, 1, 'Review all trades from last 3 days', 50),
+                    task(2, 4, 2, 'Identify "Overtrading" triggers', 50),
+                    task(2, 4, 3, 'Set a "Stop Trading" rule', 75)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(2, 5, 1, 'Pass a "No Mistakes" trading day challenge', 150),
+                    task(2, 5, 2, 'Export your trade history', 25),
+                    task(2, 5, 3, 'Calculate your Win Rate', 50)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(2, 6, 1, 'Read about "Trader Psychology"', 50),
+                    task(2, 6, 2, 'Watch chart analysis of the week', 50),
+                    task(2, 6, 3, 'Optimize your chart layout', 25)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(2, 7, 1, 'Decide if ready for small live account', 50),
+                    task(2, 7, 2, 'Fund account (only money you can lose)', 100),
+                    task(2, 7, 3, 'Set goals for Week 3', 50)
+                ]
+            }
+        ]
+    },
+    ...generateRemainingWeeks('day-trading')
+];
+
+// ============================================
+// CRYPTO ROADMAP
+// ============================================
+export const CRYPTO_ROADMAP: Week[] = [
+    {
+        id: 1, title: 'Week 1', description: 'Security & Basics',
+        isLocked: false, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(1, 1, 1, 'Understand Bitcoin vs Altcoins', 50),
+                    task(1, 1, 2, 'Learn about Blockchain basics', 50),
+                    task(1, 1, 3, 'Setup a centralized exchange (Coinbase/Binance)', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(1, 2, 1, 'Learn about Self-Custody (Hot vs Cold wallets)', 75),
+                    task(1, 2, 2, 'Install MetaMask or Phantom wallet', 50),
+                    task(1, 2, 3, 'Write down seed phrase ON PAPER', 100)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(1, 3, 1, 'Learn to read a whitepaper', 75),
+                    task(1, 3, 2, 'Research Top 10 coins by market cap', 50),
+                    task(1, 3, 3, 'Understand "Market Cap" vs "Price"', 50)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(1, 4, 1, 'Make first small deposit (Fiat to Crypto)', 75),
+                    task(1, 4, 2, 'Execute a buy order', 50),
+                    task(1, 4, 3, 'Track transaction fees', 25)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(1, 5, 1, 'Send small amount to your private wallet', 75),
+                    task(1, 5, 2, 'Verify transaction on blockchain explorer', 50),
+                    task(1, 5, 3, 'Learn about gas fees', 50)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(1, 6, 1, 'Research "Dollar Cost Averaging" (DCA)', 50),
+                    task(1, 6, 2, 'Set up a recurring buy plan', 75),
+                    task(1, 6, 3, 'Enable 2FA on all accounts (Authenticator app)', 100)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(1, 7, 1, 'Review portfolio security', 75),
+                    task(1, 7, 2, 'Listen to a crypto podcast', 25),
+                    task(1, 7, 3, 'Plan your allocation %', 50)
+                ]
+            }
+        ]
+    },
+    {
+        id: 2, title: 'Week 2', description: 'DeFi & Research',
+        isLocked: true, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(2, 1, 1, 'Learn what DeFi is (Decentralized Finance)', 50),
+                    task(2, 1, 2, 'Research Uniswap/Jupiter (DEXs)', 50),
+                    task(2, 1, 3, 'Connect wallet to a DEX', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(2, 2, 1, 'Make a small swap on a DEX', 100),
+                    task(2, 2, 2, 'Learn about Slippage', 50),
+                    task(2, 2, 3, 'Disconnect wallet from site after use', 50)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(2, 3, 1, 'Research Staking vs Lending', 75),
+                    task(2, 3, 2, 'Stake a small amount of an asset', 75),
+                    task(2, 3, 3, 'Calculate APY rewards', 50)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(2, 4, 1, 'Learn to analyze Tokenomics', 75),
+                    task(2, 4, 2, 'Check unlocking schedules (Vestings)', 50),
+                    task(2, 4, 3, 'Investigate team background of a project', 75)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(2, 5, 1, 'Research NFTs / Real World Assets (RWA)', 50),
+                    task(2, 5, 2, 'Join a project Discord/Telegram (Lurk)', 50),
+                    task(2, 5, 3, 'Identify 3 red flags (Scams)', 75)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(2, 6, 1, 'Audit your portfolio balance', 50),
+                    task(2, 6, 2, 'Rebalance if needed', 50),
+                    task(2, 6, 3, 'Record all transactions for tax purposes', 75)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(2, 7, 1, 'Create a "Thesis" for your investments', 75),
+                    task(2, 7, 2, 'Set clear profit-taking targets', 75),
+                    task(2, 7, 3, 'Prepare for Week 3', 25)
+                ]
+            }
+        ]
+    },
+    ...generateRemainingWeeks('crypto')
+];
+
+// ============================================
+// REAL ESTATE ROADMAP
+// ============================================
+export const REAL_ESTATE_ROADMAP: Week[] = [
+    {
+        id: 1, title: 'Week 1', description: 'Foundations & Strategy',
+        isLocked: false, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(1, 1, 1, 'Decide strategy (Wholesale, Flip, Buy & Hold)', 50),
+                    task(1, 1, 2, 'Learn basic RE terms (ARV, Rehab, Cap Rate)', 50),
+                    task(1, 1, 3, 'Check your credit score', 25)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(1, 2, 1, 'Analyze your local market on Zillow/Redfin', 50),
+                    task(1, 2, 2, 'Identify "Hot" neighborhoods', 50),
+                    task(1, 2, 3, 'Calculate "Cash on Cash Return" example', 75)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(1, 3, 1, 'Attend a local REIA meeting or online group', 75),
+                    task(1, 3, 2, 'Connect with 1 local investor/agent', 50),
+                    task(1, 3, 3, 'Listen to a Real Estate podcast', 25)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(1, 4, 1, 'Drive or walk a target neighborhood', 75),
+                    task(1, 4, 2, 'Look for "Distressed" properties', 75),
+                    task(1, 4, 3, 'Write down 5 addresses', 50)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(1, 5, 1, 'Practice analyzing a deal (The 1% Rule)', 75),
+                    task(1, 5, 2, 'Research funding options (Hard money, FHA)', 75),
+                    task(1, 5, 3, 'Talk to a mortgage broker (optional)', 50)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(1, 6, 1, 'Analyze 3 properties on Zillow', 75),
+                    task(1, 6, 2, 'Determine the Maximum Allowable Offer (MAO)', 75),
+                    task(1, 6, 3, 'Learn about "Wholesaling" contracts', 50)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(1, 7, 1, 'Set weekly goal for deal analysis', 50),
+                    task(1, 7, 2, 'Organize your contacts list', 25),
+                    task(1, 7, 3, 'Plan route for "Driving for Dollars"', 50)
+                ]
+            }
+        ]
+    },
+    {
+        id: 2, title: 'Week 2', description: 'Lead Generation',
+        isLocked: true, isCompleted: false,
+        days: [
+            {
+                day: 1, tasks: [
+                    task(2, 1, 1, 'Drive for dollars (Find 10 distressed homes)', 100),
+                    task(2, 1, 2, 'Use a skip tracing app to find owners', 75),
+                    task(2, 1, 3, 'Create a spreadsheet of leads', 50)
+                ]
+            },
+            {
+                day: 2, tasks: [
+                    task(2, 2, 1, 'Call 5 property owners', 100),
+                    task(2, 2, 2, 'Use a "Seller Script" to ask if selling', 50),
+                    task(2, 2, 3, 'Note motivation level of sellers', 50)
+                ]
+            },
+            {
+                day: 3, tasks: [
+                    task(2, 3, 1, 'Analyze 5 on-market deals', 75),
+                    task(2, 3, 2, 'Call listing agents to ask questions', 75),
+                    task(2, 3, 3, 'Build rapport with agents', 50)
+                ]
+            },
+            {
+                day: 4, tasks: [
+                    task(2, 4, 1, 'Send 10 letters/postcards to owners', 75),
+                    task(2, 4, 2, 'Set up a CRM (Podio or Spreadsheet)', 50),
+                    task(2, 4, 3, 'Follow up on previous calls', 50)
+                ]
+            },
+            {
+                day: 5, tasks: [
+                    task(2, 5, 1, 'Make a low practice offer (verbal)', 100),
+                    task(2, 5, 2, 'Handle objections from seller', 75),
+                    task(2, 5, 3, 'Calculate repair costs on a house', 75)
+                ]
+            },
+            {
+                day: 6, tasks: [
+                    task(2, 6, 1, 'Network with Cash Buyers (for wholesaling)', 75),
+                    task(2, 6, 2, 'Post in investor groups about what you find', 50),
+                    task(2, 6, 3, 'Review fair housing laws', 50)
+                ]
+            },
+            {
+                day: 7, tasks: [
+                    task(2, 7, 1, 'Review week activity', 50),
+                    task(2, 7, 2, 'Set showing appointment if possible', 100),
+                    task(2, 7, 3, 'Prepare for Week 3', 25)
+                ]
+            }
+        ]
+    },
+    ...generateRemainingWeeks('real-estate')
+];
+
 // Get roadmap for a specific niche
 export function getNicheRoadmap(nicheId: NicheType): Week[] {
     const roadmaps: Record<NicheType, Week[]> = {
@@ -1395,13 +1990,19 @@ export function getNicheRoadmap(nicheId: NicheType): Week[] {
         'baking': BAKING_ROADMAP,
         'nail-tech': NAIL_TECH_ROADMAP,
         'hair-stylist': HAIR_STYLIST_ROADMAP,
-        'coaching': FREELANCING_ROADMAP, // Reuse freelancing pattern
-        'ecommerce': DROPSHIPPING_ROADMAP, // Similar to dropshipping
-        'affiliate-marketing': CONTENT_CREATOR_ROADMAP, // Similar content focus
-        'tutoring': FREELANCING_ROADMAP, // Similar pattern
-        'photography': FREELANCING_ROADMAP, // Similar pattern
-        'general': FREELANCING_ROADMAP // Default fallback
+        'coaching': FREELANCING_ROADMAP,
+        'ecommerce': DROPSHIPPING_ROADMAP,
+        'affiliate-marketing': CONTENT_CREATOR_ROADMAP,
+        'tutoring': FREELANCING_ROADMAP,
+        'photography': FREELANCING_ROADMAP,
+        'lash-tech': LASH_TECH_ROADMAP,
+        'digital-products': DIGITAL_PRODUCTS_ROADMAP,
+        'day-trading': DAY_TRADING_ROADMAP,
+        'crypto': CRYPTO_ROADMAP,
+        'real-estate': REAL_ESTATE_ROADMAP,
+        'general': FREELANCING_ROADMAP
     };
 
     return roadmaps[nicheId] || roadmaps['general'];
 }
+
