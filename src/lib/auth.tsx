@@ -24,7 +24,9 @@ export interface UserProgress {
     badges: string[];
     unlocked_items: string[];
     niche_id?: string;
-    hustle_bucks: number; // Also adding hustle_bucks since I saw it missing in previous view (it wasn't in the view I just saw, but Dashboard uses it)
+    hustle_bucks: number;
+    generated_hustles?: any; // Stores the 3 quests to persist them
+    rerolls_remaining?: number;
 }
 
 interface AuthContextType {

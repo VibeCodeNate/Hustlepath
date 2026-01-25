@@ -7,17 +7,18 @@ import { fireConfetti } from '../lib/confetti';
 import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../lib/auth';
+import { supabase } from '../lib/supabase';
+import { useSound } from '../lib/sound';
+import { CoolLoadingScreen } from '../components/CoolLoadingScreen';
 
 interface Recommendation {
     title: string;
     description: string;
-    // New comprehensive fields
     why_this_fits: string;
     earnings_potential_text: string;
     getting_started_steps: string[];
     key_influencers: string[];
     pro_insight_teaser: string;
-
     difficulty_score: number;
     income_score: number;
     velocity_score: number;
@@ -29,55 +30,86 @@ interface Recommendation {
 export function Results() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { profile } = useAuth();
+    const { profile, progress, refreshProfile, loading: authLoading } = useAuth(); // Need refreshProfile to update UI after DB writes
+    const { play } = useSound();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     // Try to get answers from location state, fallback to sessionStorage, then profile
     const [answers, setAnswers] = useState<any>(() => {
         if (location.state?.answers) return location.state.answers;
-
         const stored = sessionStorage.getItem('hustlepath_answers');
         if (stored) return JSON.parse(stored);
-
-        return null; // Will check profile in useEffect
+        return null;
     });
 
     const [loading, setLoading] = useState(true);
     const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [rerollsLeft, setRerollsLeft] = useState(1);
+    const [rerollsLeft, setRerollsLeft] = useState(0); // Initialized from profile later
     const [excludedTitles, setExcludedTitles] = useState<string[]>([]);
 
+
+    // Sync answers from profile if needed
     useEffect(() => {
         if (!answers && profile?.quiz_answers) {
             setAnswers(profile.quiz_answers);
         }
     }, [profile, answers]);
 
-    const fetchRecommendations = async (retryTitles: string[] = []) => {
-        // If we don't have answers yet (waiting for profile), don't fetch or error yet
-        if (!answers && !profile?.quiz_answers) return;
+    // Sync rerolls from progress
+    useEffect(() => {
+        if (progress) {
+            setRerollsLeft(progress.rerolls_remaining ?? 1);
+        }
+    }, [progress]);
 
-        const answersToUse = answers || profile?.quiz_answers;
-        if (!answersToUse) return;
+    // Main Logic: Load or Generate
+    useEffect(() => {
+        // Wait for auth to fully load (profile AND progress)
+        if (authLoading) return;
+        if (!profile) return;
 
+        // 1. Check if we already have generated results in DB
+        // 1. Check if we already have generated results in DB
+        if (progress?.generated_hustles && progress.generated_hustles.length > 0) {
+            console.log("Loading persisted results from DB");
+            setRecommendations(progress.generated_hustles);
+            setLoading(false);
+            return;
+        }
+
+        // 2. If no persisted results, generate them (First run)
+        // Ensure we have answers
+        const answersToUse = answers || profile.quiz_answers;
+        if (answersToUse && loading && !recommendations) {
+            generateAndSaveResults(answersToUse);
+        }
+
+    }, [profile, answers]);
+
+    const generateAndSaveResults = async (answersData: any, isReroll = false) => {
         setLoading(true);
+        setError(null);
+
+        // Min wait time for "cool loading screen" to be appreciated
+        const minWaitPromise = new Promise(resolve => setTimeout(resolve, 3500));
+
         try {
             const prompt = `
                 Act as a sophisticated business consultant and video game quest giver. Based on this profile, generate 3 "Side Hustle Quests" that are perfect matches.
 
                 User Profile:
-                - Capital: ${answersToUse.capital}
-                - Time: ${answersToUse.time}
-                - Goal: ${answersToUse.goal}
-                - Interests: ${answersToUse.interest}
-                - Tech Skill: ${answersToUse.tech_level}
-                - Social: ${answersToUse.social_preference}
-                - Hobbies: ${answersToUse.hobbies}
-                - Frustration: ${answersToUse.frustration}
-                - Vehicle Access: ${answersToUse.vehicle}
+                - Capital: ${answersData.capital}
+                - Time: ${answersData.time}
+                - Goal: ${answersData.goal}
+                - Interests: ${answersData.interest}
+                - Tech Skill: ${answersData.tech_level}
+                - Social: ${answersData.social_preference}
+                - Hobbies: ${answersData.hobbies}
+                - Frustration: ${answersData.frustration}
+                - Vehicle Access: ${answersData.vehicle}
 
-                ${retryTitles.length > 0 ? `CRITICAL: Do NOT include these previously suggested quests: ${retryTitles.join(', ')}` : ''}
+                ${excludedTitles.length > 0 ? `CRITICAL: Do NOT include these previously suggested quests: ${excludedTitles.join(', ')}` : ''}
 
                 Pool of Options (Tailor the title/angle to the user):
                 - Baking business / Custom Dessert Orders
@@ -138,70 +170,88 @@ export function Results() {
                 Do not include markdown. Just raw JSON.
             `;
 
-            const completion = await openai.chat.completions.create({
-                messages: [{ role: "user", content: prompt }],
-                model: "gpt-4o-mini",
-            });
+            const [completion] = await Promise.all([
+                openai.chat.completions.create({
+                    messages: [{ role: "user", content: prompt }],
+                    model: "gpt-4o-mini",
+                }),
+                minWaitPromise // Ensure we wait at least 3.5s for the cool animation
+            ]);
 
             const content = completion.choices[0].message.content;
             if (content) {
                 const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
                 const newRecs = JSON.parse(cleanContent);
+
                 setRecommendations(newRecs);
-                // Add new titles to excluded list for future
+                // Add new titles to excluded list
                 setExcludedTitles(prev => [...prev, ...newRecs.map((r: any) => r.title)]);
+
+                // Save to Supabase
+                if (profile) {
+                    const updates: any = {
+                        generated_hustles: newRecs
+                    };
+
+                    if (isReroll) {
+                        updates.rerolls_remaining = (progress?.rerolls_remaining ?? 1) - 1;
+                    }
+
+                    const { error: dbError } = await supabase
+                        .from('user_progress')
+                        .update(updates)
+                        .eq('user_id', profile.id);
+
+                    if (dbError) console.error('Error saving results:', dbError);
+                    else refreshProfile(); // Refresh local profile state
+                }
+
+                play('success'); // Play sound!
             } else {
                 throw new Error("No content received from AI");
             }
         } catch (err: any) {
             console.error("AI Error:", err);
             setError("Failed to generate quests. Please try again.");
+            play('error');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        // If answers are present, fetch
-        if (answers) {
-            fetchRecommendations();
+    const handleReroll = () => {
+        if (rerollsLeft > 0) {
+            play('click');
+            generateAndSaveResults(answers || profile?.quiz_answers, true);
         }
-        // If no answers and no profile (or profile has empty answers), and not loading profile...
-        // Wait, we need to handle the case where answers ARE null initially but load later
-    }, [answers]);
+    };
 
-    // Safety redirect primarily for guests or if data truly lost
+    // Safety redirect primarily for guests
     useEffect(() => {
         const timer = setTimeout(() => {
             if (!answers && !loading && !profile) {
                 navigate('/assessment');
             }
-        }, 2000); // Give profile time to load
+        }, 3000);
         return () => clearTimeout(timer);
     }, [answers, loading, profile, navigate]);
 
-    const handleReroll = () => {
-        if (rerollsLeft > 0) {
-            setRerollsLeft(prev => prev - 1);
-            fetchRecommendations(excludedTitles);
-        }
-    };
 
     const handleStartQuest = (quest: Recommendation) => {
-        // Payment Wall
         if (!profile?.is_pro) {
+            play('error');
             setShowUpgradeModal(true);
             return;
         }
 
+        play('levelUp');
         fireConfetti();
-        // Small delay to let confetti pop before nav
         setTimeout(() => {
             navigate('/explainer', { state: { hustle: quest, answers } });
-        }, 800);
+        }, 1500); // Longer delay to hear sound
     };
 
-    if (!answers) return null;
+    if (!answers && !profile) return null;
 
     const getCategoryIcon = (cat: string) => {
         switch (cat) {
@@ -256,24 +306,28 @@ export function Results() {
             <Navbar />
 
             <div className="container mx-auto px-4 pt-32 max-w-5xl relative z-10">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-10"
-                >
-                    <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-2 rounded-full text-sm font-bold mb-6 border border-primary/20 shadow-[0_0_20px_rgba(190,242,100,0.2)]">
-                        <Trophy className="h-5 w-5" />
-                        QUESTS AVAILABLE
-                    </div>
-                    <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
-                        Mission <span className="text-primary">Accepted.</span>
-                    </h1>
-                    <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
-                        We analyzed your stats. Here are the 3 highest-value opportunities for your specific skill set.
-                    </p>
-                </motion.div>
+                {/* Header (Hidden while loading to focus on the bar) */}
+                {!loading && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center mb-10"
+                    >
+                        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-6 py-2 rounded-full text-sm font-bold mb-6 border border-primary/20 shadow-[0_0_20px_rgba(190,242,100,0.2)]">
+                            <Trophy className="h-5 w-5" />
+                            QUESTS AVAILABLE
+                        </div>
+                        <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
+                            Mission <span className="text-primary">Accepted.</span>
+                        </h1>
+                        <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+                            We analyzed your stats. Here are the 3 highest-value opportunities for your specific skill set.
+                        </p>
+                    </motion.div>
+                )}
 
-                {rerollsLeft > 0 && !loading && (
+                {/* Reroll Button */}
+                {!loading && rerollsLeft > 0 && recommendations && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -290,12 +344,9 @@ export function Results() {
                     </motion.div>
                 )}
 
+                {/* Loading or Content */}
                 {loading ? (
-                    <div className="space-y-8">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="h-64 bg-white/5 rounded-3xl border border-white/5 animate-pulse" />
-                        ))}
-                    </div>
+                    <CoolLoadingScreen />
                 ) : error ? (
                     <div className="text-center py-12">
                         <span className="text-red-500 font-bold text-xl">{error}</span>
