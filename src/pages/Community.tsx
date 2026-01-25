@@ -10,12 +10,26 @@ import { supabase } from '../lib/supabase';
 import { type AvatarConfig } from '../components/CharacterPreview';
 import { motion } from 'framer-motion';
 
+import { useSound } from '../lib/sound';
+
 export function Community() {
     const navigate = useNavigate();
     const { user, profile } = useAuth();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'for-you' | 'following' | 'trending'>('for-you');
+
+    const [savedPosts, setSavedPosts] = useState<string[]>([]);
+    const { play } = useSound();
+
+    // Load saved posts
+    useEffect(() => {
+        if (!user) return;
+        const saved = localStorage.getItem(`hustlepath_saved_posts_${user.id}`);
+        if (saved) {
+            setSavedPosts(JSON.parse(saved));
+        }
+    }, [user]);
 
     // Fetch Posts
     useEffect(() => {
@@ -116,6 +130,7 @@ export function Community() {
                     }
                 };
                 setPosts([newPost, ...posts]);
+                play('success');
             }
         } catch (err) {
             console.error('Error creating post:', err);
@@ -124,6 +139,22 @@ export function Community() {
 
     const handleLike = async (postId: string) => {
         console.log('Syncing like for', postId);
+    };
+
+    const handleRepost = async (post: Post) => {
+        if (!user) return;
+        const repostContent = `🔄 Reposted from ${post.author.name}:\n\n${post.content}`;
+        await handleCreatePost(repostContent);
+    };
+
+    const handleBookmark = (postId: string) => {
+        if (!user) return;
+        const newSaved = savedPosts.includes(postId)
+            ? savedPosts.filter(id => id !== postId)
+            : [...savedPosts, postId];
+
+        setSavedPosts(newSaved);
+        localStorage.setItem(`hustlepath_saved_posts_${user.id}`, JSON.stringify(newSaved));
     };
 
     const trendingTopics = [
@@ -197,8 +228,8 @@ export function Community() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`flex-1 py-4 px-4 text-sm font-medium transition-all relative group ${activeTab === tab.id
-                                    ? 'text-white'
-                                    : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                                ? 'text-white'
+                                : 'text-muted-foreground hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             <span className="flex items-center justify-center gap-2">
@@ -246,7 +277,13 @@ export function Community() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.1 * i }}
                                     >
-                                        <PostCard post={post} onLike={handleLike} />
+                                        <PostCard
+                                            post={post}
+                                            onLike={handleLike}
+                                            onRepost={handleRepost}
+                                            onBookmark={handleBookmark}
+                                            isBookmarked={savedPosts.includes(post.id)}
+                                        />
                                     </motion.div>
                                 ))}
                                 {posts.length === 0 && (

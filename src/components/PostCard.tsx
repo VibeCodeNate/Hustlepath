@@ -39,14 +39,17 @@ import { useSound } from '../lib/sound';
 interface PostCardProps {
     post: Post;
     onLike: (postId: string) => void;
+    onRepost?: (post: Post) => void;
+    onBookmark?: (postId: string) => void;
+    isBookmarked?: boolean;
 }
 
-export function PostCard({ post, onLike }: PostCardProps) {
+export function PostCard({ post, onLike, onRepost, onBookmark, isBookmarked = false }: PostCardProps) {
     const { user, profile } = useAuth();
     const [liked, setLiked] = useState(post.liked_by_user);
     const [likesCount, setLikesCount] = useState(post.likes);
     const [isAnimating, setIsAnimating] = useState(false);
-    const [bookmarked, setBookmarked] = useState(false);
+    const [bookmarked, setBookmarked] = useState(isBookmarked);
     const { play } = useSound();
 
     // Reply state
@@ -74,6 +77,11 @@ export function PostCard({ post, onLike }: PostCardProps) {
     const handleBookmark = () => {
         setBookmarked(!bookmarked);
         play('click');
+        if (onBookmark) onBookmark(post.id);
+    };
+
+    const handleRepostTrigger = () => {
+        if (onRepost) onRepost(post);
     };
 
     const handleToggleReplies = async () => {
@@ -204,7 +212,10 @@ export function PostCard({ post, onLike }: PostCardProps) {
                 </button>
 
                 {/* Repost */}
-                <button className="flex items-center gap-2 text-sm text-white/40 hover:text-green-400 transition-colors group/btn p-2 rounded-full hover:bg-green-500/10">
+                <button
+                    onClick={handleRepostTrigger}
+                    className="flex items-center gap-2 text-sm text-white/40 hover:text-green-400 transition-colors group/btn p-2 rounded-full hover:bg-green-500/10"
+                >
                     <Repeat2 className="w-5 h-5" />
                 </button>
 

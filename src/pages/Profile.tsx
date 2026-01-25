@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
+import { PostCard, type Post } from '../components/PostCard';
 import { Button } from '../components/Button';
-import { ArrowLeft, Settings, UserPlus, UserMinus, Ban, Trophy, Coins, Calendar, Users, MessageSquare, Image, Shield, Edit2, X, Repeat2 } from 'lucide-react';
+import { ArrowLeft, Settings, UserPlus, UserMinus, Ban, Trophy, Coins, Calendar, Users, Shield, Edit2, X, Image } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { useSound } from '../lib/sound';
@@ -91,8 +92,11 @@ export function Profile() {
     const [followers, setFollowers] = useState<string[]>([]);
     const [following, setFollowing] = useState<string[]>([]);
     const [blocked, setBlocked] = useState<string[]>([]);
-    const [posts, setPosts] = useState<any[]>([]);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [reposts, setReposts] = useState<Post[]>([]);
+    const [savedPosts, setSavedPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'posts' | 'reposts' | 'saved'>('posts');
 
     // Modal states
     const [showProfilePicModal, setShowProfilePicModal] = useState(false);
@@ -156,7 +160,57 @@ export function Profile() {
                 .limit(5);
 
             if (postsData) {
-                setPosts(postsData);
+                const formattedPosts: Post[] = postsData.map((item: any) => ({
+                    id: item.id,
+                    content: item.content,
+                    created_at: item.created_at,
+                    likes: item.likes_count,
+                    comments: item.comments_count,
+                    liked_by_user: false,
+                    author: {
+                        id: profileData.id,
+                        name: profileData.display_name || profileData.username || 'Unknown',
+                        avatar_config: profileData.avatar_config || {},
+                        level: progressData?.level || 1,
+                        prestige: progressData?.prestige || 0,
+                    }
+                }));
+
+                setPosts(formattedPosts.filter(p => !p.content.startsWith('🔄 Reposted from ')));
+                setReposts(formattedPosts.filter(p => p.content.startsWith('🔄 Reposted from ')));
+            }
+
+            // Load saved posts if own profile
+            if (profileId === user?.id) {
+                const savedIds = JSON.parse(localStorage.getItem(`hustlepath_saved_posts_${profileId}`) || '[]');
+                if (savedIds.length > 0) {
+                    const { data: savedData } = await supabase
+                        .from('community_posts')
+                        .select(`
+                            id, content, created_at, likes_count, comments_count,
+                            profiles (id, username, display_name, avatar_config, user_progress (level, prestige))
+                        `)
+                        .in('id', savedIds);
+
+                    if (savedData) {
+                        const formattedSaved: Post[] = savedData.map((item: any) => ({
+                            id: item.id,
+                            content: item.content,
+                            created_at: item.created_at,
+                            likes: item.likes_count,
+                            comments: item.comments_count,
+                            liked_by_user: false,
+                            author: {
+                                id: item.profiles.id,
+                                name: item.profiles.display_name || item.profiles.username || 'Unknown',
+                                avatar_config: item.profiles.avatar_config || {},
+                                level: item.profiles.user_progress?.[0]?.level || 1,
+                                prestige: item.profiles.user_progress?.[0]?.prestige || 0,
+                            }
+                        }));
+                        setSavedPosts(formattedSaved);
+                    }
+                }
             }
 
             // Load owned items, followers, etc from localStorage
@@ -310,8 +364,8 @@ export function Profile() {
                                         setShowProfilePicModal(false);
                                     }}
                                     className={`aspect-square rounded-xl flex items-center justify-center text-3xl transition-all ${selectedProfilePic === pic
-                                            ? 'bg-primary/30 border-2 border-primary scale-110'
-                                            : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                                        ? 'bg-primary/30 border-2 border-primary scale-110'
+                                        : 'bg-white/5 border border-white/10 hover:bg-white/10'
                                         }`}
                                 >
                                     {pic}
@@ -341,8 +395,8 @@ export function Profile() {
                                         setShowCallingCardModal(false);
                                     }}
                                     className={`p-4 rounded-xl bg-gradient-to-r ${card.gradient} text-center font-bold transition-all ${selectedCallingCard === card.id
-                                            ? 'ring-2 ring-primary scale-105'
-                                            : 'hover:scale-105'
+                                        ? 'ring-2 ring-primary scale-105'
+                                        : 'hover:scale-105'
                                         }`}
                                 >
                                     {card.name}
@@ -527,8 +581,8 @@ export function Profile() {
                                         <div
                                             key={badge.id}
                                             className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${earnedBadges.includes(badge.id)
-                                                    ? 'bg-yellow-500/20 border border-yellow-500/50'
-                                                    : 'bg-white/5 grayscale opacity-30'
+                                                ? 'bg-yellow-500/20 border border-yellow-500/50'
+                                                : 'bg-white/5 grayscale opacity-30'
                                                 }`}
                                             title={badge.name}
                                         >
@@ -615,38 +669,48 @@ export function Profile() {
                         )}
                     </div>
 
-                    {/* Recent Posts - Clickable with Repost */}
-                    <div className="bg-black/40 border border-white/10 rounded-2xl p-6">
-                        <h3 className="font-bold mb-4 flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-cyan-400" />
-                            Recent Posts
-                        </h3>
-                        <div className="space-y-3">
-                            {posts.length > 0 ? posts.slice(0, 3).map((post, i) => (
-                                <div key={i} className="p-3 bg-white/5 rounded-lg group">
-                                    <button
-                                        onClick={() => navigate(`/community?post=${post.id}`)}
-                                        className="text-left w-full"
-                                    >
-                                        <p className="text-sm line-clamp-2 hover:text-primary transition-colors">{post.content}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {new Date(post.created_at).toLocaleDateString()}
-                                        </p>
-                                    </button>
-                                    {!isOwnProfile && (
-                                        <button
-                                            onClick={() => handleRepost(post)}
-                                            className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                                        >
-                                            <Repeat2 className="w-3 h-3" />
-                                            Repost
-                                        </button>
-                                    )}
-                                </div>
-                            )) : (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    No posts yet
-                                </div>
+                    {/* Main Content Tabs - Twitter Style */}
+                    <div className="md:col-span-2 space-y-4">
+                        <div className="flex border-b border-white/10 mb-2">
+                            <button
+                                onClick={() => setActiveTab('posts')}
+                                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'posts' ? 'border-primary text-white' : 'border-transparent text-muted-foreground hover:bg-white/5'}`}
+                            >
+                                Posts
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('reposts')}
+                                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'reposts' ? 'border-primary text-white' : 'border-transparent text-muted-foreground hover:bg-white/5'}`}
+                            >
+                                Reposts
+                            </button>
+                            {isOwnProfile && (
+                                <button
+                                    onClick={() => setActiveTab('saved')}
+                                    className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === 'saved' ? 'border-primary text-white' : 'border-transparent text-muted-foreground hover:bg-white/5'}`}
+                                >
+                                    Saved
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="space-y-4">
+                            {activeTab === 'posts' && (
+                                posts.length > 0 ? posts.map(post => (
+                                    <PostCard key={post.id} post={post} onLike={() => { }} onRepost={handleRepost} />
+                                )) : <div className="text-center py-10 text-muted-foreground bg-white/5 rounded-xl">No posts yet</div>
+                            )}
+
+                            {activeTab === 'reposts' && (
+                                reposts.length > 0 ? reposts.map(post => (
+                                    <PostCard key={post.id} post={post} onLike={() => { }} onRepost={handleRepost} />
+                                )) : <div className="text-center py-10 text-muted-foreground bg-white/5 rounded-xl">No reposts yet</div>
+                            )}
+
+                            {activeTab === 'saved' && isOwnProfile && (
+                                savedPosts.length > 0 ? savedPosts.map(post => (
+                                    <PostCard key={post.id} post={post} onLike={() => { }} onRepost={handleRepost} isBookmarked={true} />
+                                )) : <div className="text-center py-10 text-muted-foreground bg-white/5 rounded-xl">No saved posts</div>
                             )}
                         </div>
                     </div>
@@ -662,8 +726,8 @@ export function Profile() {
                                 <div
                                     key={badge.id}
                                     className={`aspect-square rounded-lg flex items-center justify-center text-2xl ${earnedBadges.includes(badge.id)
-                                            ? 'bg-yellow-500/20 border border-yellow-500/50'
-                                            : 'bg-white/5 grayscale opacity-30'
+                                        ? 'bg-yellow-500/20 border border-yellow-500/50'
+                                        : 'bg-white/5 grayscale opacity-30'
                                         }`}
                                     title={`${badge.name}: ${badge.description}`}
                                 >
