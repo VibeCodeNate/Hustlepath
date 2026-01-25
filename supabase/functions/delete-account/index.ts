@@ -51,16 +51,27 @@ serve(async (req) => {
             auth: { autoRefreshToken: false, persistSession: false }
         })
 
-        // Delete user data from all tables explicitly to avoid any potential FK issues
-        // (Even though schema has ON DELETE CASCADE, explicit delete is safer/clearer)
-        await adminClient.from('roadmap_progress').delete().eq('user_id', user.id)
-        await adminClient.from('post_likes').delete().eq('user_id', user.id)
-        await adminClient.from('post_comments').delete().eq('user_id', user.id)
-        await adminClient.from('user_progress').delete().eq('user_id', user.id)
-        await adminClient.from('community_posts').delete().eq('user_id', user.id)
+        // Helper to safely delete from a table
+        const safeDelete = async (table: string) => {
+            try {
+                const { error } = await adminClient.from(table).delete().eq('user_id', user.id)
+                if (error) console.error(`Error deleting from ${table}:`, error)
+            } catch (e) {
+                console.error(`Exception deleting from ${table}:`, e)
+            }
+        }
 
-        // Finally delete profile (which cascades to others if missed)
-        await adminClient.from('profiles').delete().eq('id', user.id)
+        // Delete user data from all tables explicitly
+        // We run these separately, catching errors so one missing table doesn't stop the rest
+        await safeDelete('roadmap_progress')
+        await safeDelete('post_likes')
+        await safeDelete('post_comments')
+        await safeDelete('user_progress')
+        await safeDelete('community_posts')
+
+        // Finally delete profile
+        const { error: profileError } = await adminClient.from('profiles').delete().eq('id', user.id)
+        if (profileError) console.error('Error deleting profile:', profileError)
 
         // Delete the auth user using Admin API
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id)

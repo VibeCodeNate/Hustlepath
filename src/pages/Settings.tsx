@@ -110,36 +110,39 @@ export function Settings() {
         setError(null);
 
         try {
-            // Get the current session token
             const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No active session');
 
-            if (!session) {
-                throw new Error('No active session');
-            }
+            const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`;
+            console.log('Calling delete-account at:', functionUrl);
 
-            // Call the Edge Function to delete the account completely
-            const response = await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${session.access_token}`,
-                        'Content-Type': 'application/json'
-                    }
+            const response = await fetch(functionUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
                 }
-            );
+            });
 
-            const result = await response.json();
+            const responseText = await response.text();
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Non-JSON response:', responseText);
+                throw new Error(`Server returned ${response.status}: ${responseText.slice(0, 100)}`);
+            }
 
             if (!response.ok) {
-                throw new Error(result.error || 'Failed to delete account');
+                console.error('Delete failed:', result);
+                throw new Error(result.error || `Failed to delete: ${response.status} ${response.statusText}`);
             }
 
-            // Sign out and redirect
             await signOut();
             navigate('/');
         } catch (err: any) {
-            setError(err.message || 'Failed to delete account. Please contact support.');
+            console.error('Delete account error:', err);
+            setError(err.message || 'Failed to delete account. Check console for details.');
             setDeleting(false);
         }
     };
