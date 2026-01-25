@@ -6,6 +6,7 @@ export interface Objective {
     id: string;
     title: string;
     xp: number;
+    coins: number; // 5-30 coins earned for completing
     completed: boolean;
 }
 
@@ -161,8 +162,8 @@ export async function updateRoadmapProgress(userId: string, updatedWeeks: Week[]
     return { error };
 }
 
-export async function completeTaskInDb(userId: string, _taskId: string, xpReward: number) {
-    // 1. Fetch current profile stats to update XP
+export async function completeTaskInDb(userId: string, _taskId: string, xpReward: number, coinReward: number = 0) {
+    // 1. Fetch current profile stats to update XP and Coins
     const { data: profileProgress, error: fetchError } = await supabase
         .from('user_progress')
         .select('*')
@@ -178,17 +179,23 @@ export async function completeTaskInDb(userId: string, _taskId: string, xpReward
         xpReward
     );
 
+    // Calculate new coins total
+    // Base reward + potential level up bonus (e.g., 50 coins per level)
+    const levelUpBonus = leveledUp ? 50 : 0;
+    const newHustleBucks = (profileProgress.hustle_bucks || 0) + coinReward + levelUpBonus;
+
     // 3. Update Profile Progress
     const { error: updateError } = await supabase
         .from('user_progress')
         .update({
             xp: newXp,
             level: newLevel,
+            hustle_bucks: newHustleBucks,
             last_activity: new Date().toISOString()
         })
         .eq('user_id', userId);
 
-    return { error: updateError, newLevel, leveledUp };
+    return { error: updateError, newLevel, leveledUp, levelUpBonus };
 }
 
 // Check and unlock next week if conditions are met

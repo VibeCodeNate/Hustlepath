@@ -1,42 +1,44 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
-import { ArrowLeft, Dumbbell, Users, BookOpen, Heart, Check, Zap, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Users, BookOpen, Heart, Check, Zap, RotateCcw, Coins } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { useSound } from '../lib/sound';
+import { completeTaskInDb } from '../lib/roadmap';
+import { LevelUpModal } from '../components/LevelUpModal';
 
 interface ExtraObjective {
     id: string;
     title: string;
     category: 'physical' | 'community' | 'learning' | 'wellness';
     xp: number;
+    coins: number;
     completed: boolean;
 }
 
 const DAILY_OBJECTIVES: ExtraObjective[] = [
     // Physical
-    { id: 'ex-1', title: 'Do 20 pushups', category: 'physical', xp: 30, completed: false },
-    { id: 'ex-2', title: 'Take a 10-minute walk', category: 'physical', xp: 25, completed: false },
-    { id: 'ex-3', title: 'Do a 5-minute stretch routine', category: 'physical', xp: 20, completed: false },
-    { id: 'ex-4', title: 'Do 30 squats', category: 'physical', xp: 30, completed: false },
+    { id: 'ex-1', title: 'Do 20 pushups', category: 'physical', xp: 30, coins: 10, completed: false },
+    { id: 'ex-2', title: 'Take a 10-minute walk', category: 'physical', xp: 25, coins: 5, completed: false },
+    { id: 'ex-3', title: 'Do a 5-minute stretch routine', category: 'physical', xp: 20, coins: 5, completed: false },
+    { id: 'ex-4', title: 'Do 30 squats', category: 'physical', xp: 30, coins: 10, completed: false },
     // Community
-    { id: 'ex-5', title: 'Post your progress in Community Hub', category: 'community', xp: 50, completed: false },
-    { id: 'ex-6', title: 'Comment on 3 community posts', category: 'community', xp: 35, completed: false },
-    { id: 'ex-7', title: 'Reply to someone asking for help', category: 'community', xp: 40, completed: false },
-    { id: 'ex-8', title: 'Share a win or milestone', category: 'community', xp: 45, completed: false },
+    { id: 'ex-5', title: 'Post your progress in Community Hub', category: 'community', xp: 50, coins: 15, completed: false },
+    { id: 'ex-6', title: 'Comment on 3 community posts', category: 'community', xp: 35, coins: 10, completed: false },
+    { id: 'ex-7', title: 'Reply to someone asking for help', category: 'community', xp: 40, coins: 12, completed: false },
+    { id: 'ex-8', title: 'Share a win or milestone', category: 'community', xp: 45, coins: 15, completed: false },
     // Learning
-    { id: 'ex-9', title: 'Read for 15 minutes', category: 'learning', xp: 35, completed: false },
-    { id: 'ex-10', title: 'Watch a tutorial/educational video', category: 'learning', xp: 30, completed: false },
-    { id: 'ex-11', title: 'Take notes on something new', category: 'learning', xp: 25, completed: false },
-    { id: 'ex-12', title: 'Listen to a business podcast', category: 'learning', xp: 30, completed: false },
+    { id: 'ex-9', title: 'Read for 15 minutes', category: 'learning', xp: 35, coins: 10, completed: false },
+    { id: 'ex-10', title: 'Watch a tutorial/educational video', category: 'learning', xp: 30, coins: 10, completed: false },
+    { id: 'ex-11', title: 'Take notes on something new', category: 'learning', xp: 25, coins: 8, completed: false },
+    { id: 'ex-12', title: 'Listen to a business podcast', category: 'learning', xp: 30, coins: 10, completed: false },
     // Wellness
-    { id: 'ex-13', title: 'Drink 8 glasses of water', category: 'wellness', xp: 25, completed: false },
-    { id: 'ex-14', title: 'Get 7+ hours of sleep', category: 'wellness', xp: 30, completed: false },
-    { id: 'ex-15', title: 'Meditate for 5 minutes', category: 'wellness', xp: 35, completed: false },
-    { id: 'ex-16', title: 'Take a screen break (15 min)', category: 'wellness', xp: 20, completed: false },
+    { id: 'ex-13', title: 'Drink 8 glasses of water', category: 'wellness', xp: 25, coins: 5, completed: false },
+    { id: 'ex-14', title: 'Get 7+ hours of sleep', category: 'wellness', xp: 30, coins: 10, completed: false },
+    { id: 'ex-15', title: 'Meditate for 5 minutes', category: 'wellness', xp: 35, coins: 10, completed: false },
+    { id: 'ex-16', title: 'Take a screen break (15 min)', category: 'wellness', xp: 20, coins: 5, completed: false },
 ];
 
 const CATEGORY_CONFIG = {
@@ -53,6 +55,10 @@ export function ExtraObjectives() {
     const [objectives, setObjectives] = useState<ExtraObjective[]>(DAILY_OBJECTIVES);
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [loading, setLoading] = useState<string | null>(null);
+
+    // Level Up State
+    const [showLevelUp, setShowLevelUp] = useState(false);
+    const [newLevel, setNewLevel] = useState(1);
 
     // Load saved progress from localStorage (resets daily)
     useEffect(() => {
@@ -80,23 +86,25 @@ export function ExtraObjectives() {
         if (!user || loading || objective.completed) return;
 
         setLoading(objective.id);
+        const coinsEarned = Math.min(30, Math.max(5, objective.coins)); // Enforce 5-30 range
 
         try {
-            // Award XP
-            const { data: progress } = await supabase
-                .from('user_progress')
-                .select('xp')
-                .eq('user_id', user.id)
-                .single();
+            // Use centralized function to update DB, handle levels, and coins
+            const { error, newLevel, leveledUp } = await completeTaskInDb(
+                user.id,
+                objective.id,
+                objective.xp,
+                coinsEarned
+            );
 
-            if (progress) {
-                await supabase
-                    .from('user_progress')
-                    .update({
-                        xp: progress.xp + objective.xp,
-                        last_activity: new Date().toISOString()
-                    })
-                    .eq('user_id', user.id);
+            if (error) throw error;
+
+            if (leveledUp && newLevel) {
+                setNewLevel(newLevel);
+                setShowLevelUp(true);
+                play('levelUp');
+            } else {
+                play('success');
             }
 
             // Update local state
@@ -106,7 +114,6 @@ export function ExtraObjectives() {
             setObjectives(updated);
             saveProgress(updated);
 
-            play('success');
             await refreshProfile();
         } catch (err) {
             console.error('Error completing objective:', err);
@@ -129,10 +136,18 @@ export function ExtraObjectives() {
 
     const completedCount = objectives.filter(o => o.completed).length;
     const totalXpEarned = objectives.filter(o => o.completed).reduce((sum, o) => sum + o.xp, 0);
+    const totalCoinsEarned = objectives.filter(o => o.completed).reduce((sum, o) => sum + o.coins, 0);
 
     return (
         <div className="min-h-screen bg-background pb-20 overflow-hidden">
             <Navbar />
+
+            {/* Level Up Modal */}
+            <LevelUpModal
+                isOpen={showLevelUp}
+                onClose={() => setShowLevelUp(false)}
+                level={newLevel}
+            />
 
             {/* Background Effects */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -179,11 +194,22 @@ export function ExtraObjectives() {
                         </div>
                         <div className="w-px h-10 bg-white/10" />
                         <div>
-                            <div className="text-2xl font-bold text-yellow-400">+{totalXpEarned}</div>
+                            <div className="text-2xl font-bold text-yellow-400 flex items-center gap-1">
+                                <Zap className="w-4 h-4" />
+                                +{totalXpEarned}
+                            </div>
                             <div className="text-xs text-muted-foreground">XP Earned</div>
                         </div>
+                        <div className="w-px h-10 bg-white/10" />
+                        <div>
+                            <div className="text-2xl font-bold text-yellow-400 flex items-center gap-1">
+                                <Coins className="w-4 h-4" />
+                                +{totalCoinsEarned}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Coins Earned</div>
+                        </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">Resets daily at midnight</div>
+                    <div className="text-xs text-muted-foreground hidden sm:block">Resets daily at midnight</div>
                 </div>
 
                 {/* Category Tabs */}
@@ -191,8 +217,8 @@ export function ExtraObjectives() {
                     <button
                         onClick={() => setActiveCategory('all')}
                         className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${activeCategory === 'all'
-                                ? 'bg-white text-black'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            ? 'bg-white text-black'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                             }`}
                     >
                         All
@@ -202,8 +228,8 @@ export function ExtraObjectives() {
                             key={key}
                             onClick={() => setActiveCategory(key)}
                             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${activeCategory === key
-                                    ? `bg-${config.color}-500 text-black`
-                                    : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                ? `bg-${config.color}-500 text-black`
+                                : 'bg-white/5 text-white/60 hover:bg-white/10'
                                 }`}
                         >
                             <config.icon className="w-4 h-4" />
@@ -225,15 +251,15 @@ export function ExtraObjectives() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
                                 className={`bg-black/40 backdrop-blur-xl border rounded-2xl p-4 transition-all ${objective.completed
-                                        ? 'border-green-500/30 bg-green-500/5'
-                                        : 'border-white/10 hover:border-white/20'
+                                    ? 'border-green-500/30 bg-green-500/5'
+                                    : 'border-white/10 hover:border-white/20'
                                     }`}
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${objective.completed
-                                                ? 'bg-green-500/20 text-green-400'
-                                                : `bg-${config.color}-500/20 text-${config.color}-400`
+                                            ? 'bg-green-500/20 text-green-400'
+                                            : `bg-${config.color}-500/20 text-${config.color}-400`
                                             }`}>
                                             {objective.completed ? (
                                                 <Check className="w-5 h-5" />
@@ -245,10 +271,16 @@ export function ExtraObjectives() {
                                             <h3 className={`font-medium ${objective.completed ? 'line-through text-white/50' : ''}`}>
                                                 {objective.title}
                                             </h3>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                                 <span className="capitalize">{config.label}</span>
-                                                <span>•</span>
-                                                <span className="text-yellow-400">+{objective.xp} XP</span>
+                                                <span className="flex items-center gap-1 text-yellow-400">
+                                                    <Zap className="w-3 h-3" />
+                                                    +{objective.xp} XP
+                                                </span>
+                                                <span className="flex items-center gap-1 text-yellow-400">
+                                                    <Coins className="w-3 h-3" />
+                                                    +{objective.coins}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

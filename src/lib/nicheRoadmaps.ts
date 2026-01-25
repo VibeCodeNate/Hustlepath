@@ -47,13 +47,22 @@ export const NICHE_INFO: NicheInfo[] = [
     { id: 'photography', name: 'Photography', icon: '📷', description: 'Photo/video services', color: 'slate' },
 ];
 
-// Helper to create a task with unique ID
-const task = (weekNum: number, dayNum: number, taskNum: number, title: string, xp: number) => ({
-    id: `w${weekNum}d${dayNum}t${taskNum}`,
-    title,
-    xp,
-    completed: false
-});
+// Helper to create a task with unique ID and coin reward
+const task = (weekNum: number, dayNum: number, taskNum: number, title: string, xp: number) => {
+    // Calculate coins based on XP (5-30 range)
+    // XP ranges from 25-100 typically, so scale proportionally
+    const minCoins = 5;
+    const maxCoins = 30;
+    const coins = Math.min(maxCoins, Math.max(minCoins, Math.round((xp / 100) * maxCoins)));
+
+    return {
+        id: `w${weekNum}d${dayNum}t${taskNum}`,
+        title,
+        xp,
+        coins,
+        completed: false
+    };
+};
 
 // ============================================
 // CONTENT CREATOR ROADMAP

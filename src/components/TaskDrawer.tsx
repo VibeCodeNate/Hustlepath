@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, Trophy, Sparkles } from 'lucide-react';
+import { X, CheckCircle, Trophy, Sparkles, Coins } from 'lucide-react';
 import { Button } from './Button';
 import type { Objective } from '../lib/roadmap';
 
@@ -92,15 +92,15 @@ export function TaskDrawer({
                                     transition={{ delay: idx * 0.1 }}
                                     onClick={() => onTaskToggle(task)}
                                     className={`p-4 rounded-xl border transition-all cursor-pointer group ${task.completed
-                                            ? 'bg-green-500/10 border-green-500/30'
-                                            : 'bg-white/5 border-white/10 hover:border-primary/50 hover:bg-white/10'
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-white/5 border-white/10 hover:border-primary/50 hover:bg-white/10'
                                         } ${processingTask === task.id ? 'opacity-50 pointer-events-none' : ''}`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <div
                                             className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${task.completed
-                                                    ? 'bg-green-500 border-green-500'
-                                                    : 'border-white/30 group-hover:border-primary'
+                                                ? 'bg-green-500 border-green-500'
+                                                : 'border-white/30 group-hover:border-primary'
                                                 }`}
                                         >
                                             {task.completed && (
@@ -115,9 +115,17 @@ export function TaskDrawer({
                                                 {task.title}
                                             </h3>
                                         </div>
-                                        <div className="flex items-center gap-1 text-yellow-400 font-bold text-sm">
-                                            <Sparkles className="w-3 h-3" />
-                                            +{task.xp}
+                                        <div className="flex items-center gap-3 text-sm font-bold">
+                                            <div className="flex items-center gap-1 text-yellow-400">
+                                                <Sparkles className="w-3 h-3" />
+                                                +{task.xp}
+                                            </div>
+                                            {task.coins > 0 && (
+                                                <div className="flex items-center gap-1 text-yellow-400">
+                                                    <Coins className="w-3 h-3" />
+                                                    +{task.coins}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </motion.div>
