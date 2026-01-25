@@ -1,11 +1,33 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
-import { Sparkles, User, LogOut, Settings } from 'lucide-react';
+import { Sparkles, User, LogOut, Settings, ShoppingBag, Coins } from 'lucide-react';
 import { useAuth } from '../lib/auth';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 export function Navbar() {
     const { user, profile, signOut } = useAuth();
     const navigate = useNavigate();
+    const [hustleBucks, setHustleBucks] = useState(0);
+
+    useEffect(() => {
+        if (user) {
+            loadHustleBucks();
+        }
+    }, [user]);
+
+    const loadHustleBucks = async () => {
+        if (!user) return;
+        const { data } = await supabase
+            .from('user_progress')
+            .select('hustle_bucks')
+            .eq('user_id', user.id)
+            .single();
+
+        if (data) {
+            setHustleBucks(data.hustle_bucks || 0);
+        }
+    };
 
     const handleSignOut = async () => {
         await signOut();
@@ -29,13 +51,35 @@ export function Navbar() {
                 <div className="flex items-center gap-4">
                     {user ? (
                         <>
+                            {/* Hustle Bucks */}
                             <Link
-                                to="/dashboard"
+                                to="/shop"
+                                className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-1.5 hover:bg-yellow-500/20 transition-colors"
+                            >
+                                <Coins className="w-4 h-4 text-yellow-400" />
+                                <span className="text-sm font-bold text-yellow-400">{hustleBucks}</span>
+                            </Link>
+
+                            {/* Shop */}
+                            <Link
+                                to="/shop"
+                                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-cyan-400 transition-colors"
+                                title="Shop"
+                            >
+                                <ShoppingBag className="w-4 h-4" />
+                                <span className="hidden sm:inline">Shop</span>
+                            </Link>
+
+                            {/* Profile */}
+                            <Link
+                                to="/profile"
                                 className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <User className="w-4 h-4" />
-                                <span className="hidden sm:inline">{profile?.username || 'Dashboard'}</span>
+                                <span className="hidden sm:inline">{profile?.username || 'Profile'}</span>
                             </Link>
+
+                            {/* Settings */}
                             <Link
                                 to="/settings"
                                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -43,6 +87,8 @@ export function Navbar() {
                             >
                                 <Settings className="w-4 h-4" />
                             </Link>
+
+                            {/* Sign Out */}
                             <button
                                 onClick={handleSignOut}
                                 className="text-sm font-medium text-muted-foreground hover:text-red-400 transition-colors"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
@@ -8,14 +8,22 @@ import { LevelBadge } from '../components/LevelBadge';
 import { StreakCounter } from '../components/StreakCounter';
 import { CharacterPreview, DEFAULT_AVATAR, type AvatarConfig } from '../components/CharacterPreview';
 import { Button } from '../components/Button';
-import { Rocket, Target, Trophy, Clock, Map, Pencil, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Rocket, Target, Trophy, Clock, Map, Pencil, Sparkles, CheckCircle2, Loader2, DollarSign, Coins, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getRandomQuote } from '../lib/motivationalQuotes';
+import { useSound } from '../lib/sound';
+import Confetti from 'react-confetti';
 
 export function Dashboard() {
     const navigate = useNavigate();
     const { user, profile, progress, refreshProfile } = useAuth();
+    const { play } = useSound();
     const [checkingIn, setCheckingIn] = useState(false);
-    const [checkedIn, setCheckedIn] = useState(false);
+    const [canCheckIn, setCanCheckIn] = useState(true);
+    const [showQuoteModal, setShowQuoteModal] = useState(false);
+    const [currentQuote, setCurrentQuote] = useState('');
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [hustleBucks, setHustleBucks] = useState(0);
 
     // Default values if data is still loading or missing
     const xp = progress?.xp || 0;
@@ -26,28 +34,72 @@ export function Dashboard() {
     // Cast profile avatar config to expected type
     const avatarConfig = (profile?.avatar_config as unknown as AvatarConfig) || DEFAULT_AVATAR;
 
+    // Check if can check in (24hr cooldown)
+    useEffect(() => {
+        if (!user) return;
+
+        const lastCheckIn = localStorage.getItem(`hustlepath_last_checkin_${user.id}`);
+        if (lastCheckIn) {
+            const lastDate = new Date(lastCheckIn);
+            const now = new Date();
+            const hoursSinceLastCheckIn = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+            setCanCheckIn(hoursSinceLastCheckIn >= 24);
+        }
+
+        // Load hustle bucks
+        loadHustleBucks();
+    }, [user]);
+
+    const loadHustleBucks = async () => {
+        if (!user) return;
+        const { data } = await supabase
+            .from('user_progress')
+            .select('hustle_bucks')
+            .eq('user_id', user.id)
+            .single();
+
+        if (data) {
+            setHustleBucks(data.hustle_bucks || 0);
+        }
+    };
+
     // Daily Check-in Handler
     const handleDailyCheckIn = async () => {
-        if (!user || checkingIn || checkedIn) return;
+        if (!user || checkingIn || !canCheckIn) return;
 
         setCheckingIn(true);
         try {
-            // Update streak and award XP
+            // Update streak, XP, and award Hustle Bucks
             const { error } = await supabase
                 .from('user_progress')
                 .update({
                     streak_days: (progress?.streak_days || 0) + 1,
                     xp: (progress?.xp || 0) + 15,
+                    hustle_bucks: hustleBucks + 100,
                     last_activity: new Date().toISOString()
                 })
                 .eq('user_id', user.id);
 
             if (error) throw error;
 
-            setCheckedIn(true);
+            // Save check-in timestamp
+            localStorage.setItem(`hustlepath_last_checkin_${user.id}`, new Date().toISOString());
+
+            // Show success
+            setCanCheckIn(false);
+            setHustleBucks(prev => prev + 100);
+            setCurrentQuote(getRandomQuote());
+            setShowQuoteModal(true);
+            setShowConfetti(true);
+            play('success');
+
+            // Hide confetti after 5 seconds
+            setTimeout(() => setShowConfetti(false), 5000);
+
             await refreshProfile();
         } catch (err) {
             console.error('Check-in error:', err);
+            play('error');
         } finally {
             setCheckingIn(false);
         }
@@ -56,6 +108,84 @@ export function Dashboard() {
     return (
         <div className="min-h-screen bg-background pb-20 overflow-hidden">
             <Navbar />
+
+            {/* Confetti */}
+            {showConfetti && (
+                <Confetti
+                    width={window.innerWidth}
+                    height={window.innerHeight}
+                    recycle={false}
+                    numberOfPieces={200}
+                    colors={['#BEF264', '#22D3EE', '#E879F9', '#FBBF24', '#34D399']}
+                />
+            )}
+
+            {/* Quote Modal */}
+            <AnimatePresence>
+                {showQuoteModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+                        onClick={() => setShowQuoteModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-primary/30 rounded-3xl p-8 w-full max-w-md text-center relative overflow-hidden"
+                        >
+                            {/* Glow effects */}
+                            <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/30 blur-[80px] rounded-full" />
+                            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-cyan-500/20 blur-[80px] rounded-full" />
+
+                            <button
+                                onClick={() => setShowQuoteModal(false)}
+                                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', delay: 0.2 }}
+                                className="text-6xl mb-4"
+                            >
+                                🎉
+                            </motion.div>
+
+                            <h2 className="text-2xl font-bold mb-2 text-primary">Daily Check-in Complete!</h2>
+
+                            <div className="flex items-center justify-center gap-4 my-4">
+                                <div className="bg-primary/20 border border-primary/30 rounded-xl px-4 py-2">
+                                    <span className="text-primary font-bold">+15 XP</span>
+                                </div>
+                                <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl px-4 py-2 flex items-center gap-2">
+                                    <Coins className="w-4 h-4 text-yellow-400" />
+                                    <span className="text-yellow-400 font-bold">+100</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-black/40 rounded-2xl p-6 mt-6 relative z-10">
+                                <Sparkles className="w-6 h-6 text-yellow-400 mx-auto mb-3" />
+                                <p className="text-lg italic text-white/90 leading-relaxed">
+                                    "{currentQuote}"
+                                </p>
+                            </div>
+
+                            <Button
+                                onClick={() => setShowQuoteModal(false)}
+                                className="mt-6 w-full bg-primary text-black font-bold"
+                            >
+                                Let's Hustle!
+                            </Button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* 3D Floating Orbs Background */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -86,25 +216,8 @@ export function Dashboard() {
                     className="absolute bottom-20 left-1/4 w-[300px] h-[300px] bg-cyan-500/10 blur-[100px] rounded-full"
                 />
 
-                {/* Floating particles */}
-                <motion.div
-                    animate={{ y: [0, -15, 0], opacity: [0.3, 0.6, 0.3] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                    className="absolute top-40 right-20 w-2 h-2 bg-primary rounded-full shadow-[0_0_15px_rgba(190,242,100,0.8)]"
-                />
-                <motion.div
-                    animate={{ y: [0, 20, 0], opacity: [0.2, 0.5, 0.2] }}
-                    transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-                    className="absolute top-60 left-20 w-3 h-3 bg-cyan-400 rounded-full shadow-[0_0_15px_rgba(34,211,238,0.8)]"
-                />
-                <motion.div
-                    animate={{ y: [0, -20, 0], opacity: [0.3, 0.5, 0.3] }}
-                    transition={{ duration: 6, repeat: Infinity, delay: 2 }}
-                    className="absolute bottom-40 right-1/3 w-2 h-2 bg-fuchsia-400 rounded-full shadow-[0_0_12px_rgba(232,121,249,0.8)]"
-                />
-
                 {/* Grid overlay */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:60px_60px]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear_gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:60px_60px]" />
             </div>
 
             <div className="container mx-auto px-4 pt-20 md:pt-24 relative z-10">
@@ -119,7 +232,7 @@ export function Dashboard() {
                         <motion.div
                             whileHover={{ scale: 1.05 }}
                             className="relative group cursor-pointer"
-                            onClick={() => navigate('/character')}
+                            onClick={() => navigate('/profile')}
                         >
                             <div className="absolute -inset-1 bg-gradient-to-r from-primary via-cyan-400 to-fuchsia-500 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity" />
                             <CharacterPreview
@@ -144,23 +257,29 @@ export function Dashboard() {
                     </div>
 
                     <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
+                        {/* Hustle Bucks Display */}
+                        <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-3 py-2">
+                            <Coins className="w-5 h-5 text-yellow-400" />
+                            <span className="font-bold text-yellow-400">{hustleBucks}</span>
+                        </div>
+
                         <StreakCounter days={streak} className="flex-1 md:flex-none justify-center" />
                         <Button
                             onClick={handleDailyCheckIn}
-                            disabled={checkingIn || checkedIn}
-                            className={`flex-1 md:flex-none text-sm md:text-base relative overflow-hidden transition-all duration-300 ${checkedIn
-                                    ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                                    : 'glow-primary hover:shadow-[0_0_30px_rgba(190,242,100,0.4)]'
+                            disabled={checkingIn || !canCheckIn}
+                            className={`flex-1 md:flex-none text-sm md:text-base relative overflow-hidden transition-all duration-300 ${!canCheckIn
+                                ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                                : 'glow-primary hover:shadow-[0_0_30px_rgba(190,242,100,0.4)]'
                                 }`}
                         >
                             {checkingIn ? (
                                 <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                            ) : checkedIn ? (
+                            ) : !canCheckIn ? (
                                 <CheckCircle2 className="mr-2 w-4 h-4" />
                             ) : (
                                 <Rocket className="mr-2 w-4 h-4" />
                             )}
-                            {checkedIn ? 'Checked In!' : <><span className="hidden sm:inline">Daily </span>Check-in</>}
+                            {!canCheckIn ? 'Checked In!' : <><span className="hidden sm:inline">Daily </span>Check-in</>}
                         </Button>
                     </div>
                 </motion.div>
@@ -172,7 +291,6 @@ export function Dashboard() {
                     transition={{ delay: 0.1 }}
                     className="bg-black/40 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 mb-8 relative overflow-hidden group hover:border-primary/40 transition-colors"
                 >
-                    {/* Glow effect */}
                     <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/20 blur-[80px] rounded-full opacity-50 group-hover:opacity-80 transition-opacity" />
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-50" />
 
@@ -190,9 +308,9 @@ export function Dashboard() {
                     </div>
                 </motion.div>
 
-                {/* Dashboard Grid - Cyberpunk Cards */}
-                <div className="grid md:grid-cols-3 gap-6">
-                    {/* Quest Map Preview - Primary/Green Theme */}
+                {/* Dashboard Grid - 5 Cards */}
+                <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
+                    {/* Quest Map Preview */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -201,135 +319,147 @@ export function Dashboard() {
                         className="bg-black/50 backdrop-blur-xl border border-primary/20 rounded-3xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_40px_rgba(190,242,100,0.15)]"
                         onClick={() => navigate('/roadmap')}
                     >
-                        {/* Background glow */}
                         <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/15 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-                            <Map className="w-24 h-24 text-primary" />
+                            <Map className="w-20 h-20 text-primary" />
                         </div>
 
-                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2 relative z-10">
+                        <h3 className="text-lg font-bold mb-2 flex items-center gap-2 relative z-10">
                             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
-                                <Target className="w-4 h-4 text-primary drop-shadow-[0_0_6px_rgba(190,242,100,0.5)]" />
+                                <Target className="w-4 h-4 text-primary" />
                             </div>
                             <span className="group-hover:text-primary transition-colors">Quest Map</span>
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-6 relative z-10">
-                            Your 90-day journey awaits. Navigate checkpoint to checkpoint.
+                        <p className="text-xs text-muted-foreground mb-4 relative z-10">
+                            12-week journey
                         </p>
-
-                        {/* Mini Map Preview */}
-                        <div className="relative h-20 bg-black/50 rounded-xl mb-4 overflow-hidden border border-white/5">
-                            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(190,242,100,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(190,242,100,0.03)_1px,transparent_1px)] bg-[size:20px_20px]" />
-                            <div className="absolute inset-0 flex items-center justify-center gap-3 px-4">
-                                {[0, 1, 2, 3, 4].map((i) => (
-                                    <motion.div
-                                        key={i}
-                                        animate={i === 2 ? { scale: [1, 1.2, 1] } : {}}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                        className={`w-3 h-3 rounded-full ${i < 2
-                                                ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]'
-                                                : i === 2
-                                                    ? 'bg-primary shadow-[0_0_15px_rgba(190,242,100,0.8)]'
-                                                    : 'bg-zinc-600'
-                                            }`}
-                                    />
-                                ))}
-                            </div>
-                            <div className="absolute bottom-2 right-2 text-[10px] text-white/40">Week 1</div>
-                        </div>
 
                         <Button
                             variant="outline"
-                            className="w-full border-primary/30 hover:bg-primary/10 hover:border-primary/50 group-hover:shadow-[0_0_20px_rgba(190,242,100,0.1)]"
+                            size="sm"
+                            className="w-full border-primary/30 hover:bg-primary/10"
                         >
                             Open Map
                         </Button>
                     </motion.div>
 
-                    {/* Resources - Cyan Theme */}
+                    {/* Resources */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
+                        transition={{ delay: 0.25 }}
                         whileHover={{ scale: 1.02, y: -5 }}
-                        className="bg-black/50 backdrop-blur-xl border border-cyan-500/20 rounded-3xl p-6 cursor-pointer group transition-all duration-500 hover:border-cyan-500/50 hover:shadow-[0_0_40px_rgba(34,211,238,0.15)]"
+                        className="bg-black/50 backdrop-blur-xl border border-cyan-500/20 rounded-3xl p-6 cursor-pointer group transition-all duration-500 hover:border-cyan-500/50"
                         onClick={() => navigate('/resources')}
                     >
-                        {/* Background glow */}
-                        <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/15 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
-                                <Clock className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
+                                <Clock className="w-4 h-4 text-cyan-400" />
                             </div>
                             <span className="group-hover:text-cyan-300 transition-colors">Resources</span>
                         </h3>
-
-                        <div className="h-24 bg-black/50 rounded-2xl p-4 flex items-center justify-center mb-6 relative overflow-hidden border border-cyan-500/10 group-hover:border-cyan-500/20 transition-colors">
-                            <motion.div
-                                animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
-                                transition={{ duration: 3, repeat: Infinity }}
-                                className="absolute inset-0 bg-cyan-500/10 blur-xl"
-                            />
-                            <div className="text-center relative z-10">
-                                <div className="text-3xl font-bold text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">6</div>
-                                <div className="text-xs text-muted-foreground uppercase tracking-wider">Guides Available</div>
-                            </div>
-                        </div>
+                        <p className="text-xs text-muted-foreground mb-4">Guides & tools</p>
 
                         <Button
                             variant="outline"
-                            className="w-full border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/50"
+                            size="sm"
+                            className="w-full border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400"
                         >
                             Open Library
                         </Button>
                     </motion.div>
 
-                    {/* Community Hub - Fuchsia/Purple Theme */}
+                    {/* Community Hub */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        whileHover={{ scale: 1.02, y: -5 }}
+                        className="bg-black/50 backdrop-blur-xl border border-fuchsia-500/20 rounded-3xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-500 hover:border-fuchsia-500/50"
+                        onClick={() => navigate('/community')}
+                    >
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+                            <Sparkles className="w-20 h-20 text-fuchsia-400" />
+                        </div>
+
+                        <h3 className="text-lg font-bold mb-2 flex items-center gap-2 relative z-10">
+                            <div className="w-8 h-8 rounded-lg bg-fuchsia-500/20 flex items-center justify-center border border-fuchsia-500/30">
+                                <Rocket className="w-4 h-4 text-fuchsia-400" />
+                            </div>
+                            <span className="group-hover:text-fuchsia-300 transition-colors">Community</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-4 relative z-10">
+                            Connect & share
+                        </p>
+
+                        <Button
+                            size="sm"
+                            className="w-full bg-fuchsia-500/10 hover:bg-fuchsia-500/20 border border-fuchsia-500/30 text-fuchsia-300 relative z-10"
+                        >
+                            Enter Hub
+                        </Button>
+                    </motion.div>
+
+                    {/* Earnings - NEW */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35 }}
+                        whileHover={{ scale: 1.02, y: -5 }}
+                        className="bg-black/50 backdrop-blur-xl border border-green-500/20 rounded-3xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-500 hover:border-green-500/50"
+                        onClick={() => navigate('/earnings')}
+                    >
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+                            <DollarSign className="w-20 h-20 text-green-400" />
+                        </div>
+
+                        <h3 className="text-lg font-bold mb-2 flex items-center gap-2 relative z-10">
+                            <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center border border-green-500/30">
+                                <DollarSign className="w-4 h-4 text-green-400" />
+                            </div>
+                            <span className="group-hover:text-green-300 transition-colors">Earnings</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-4 relative z-10">
+                            Track income
+                        </p>
+
+                        <Button
+                            size="sm"
+                            className="w-full bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-300 relative z-10"
+                        >
+                            View Earnings
+                        </Button>
+                    </motion.div>
+
+                    {/* Goals - NEW */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                         whileHover={{ scale: 1.02, y: -5 }}
-                        className="bg-black/50 backdrop-blur-xl border border-fuchsia-500/20 rounded-3xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-500 hover:border-fuchsia-500/50 hover:shadow-[0_0_40px_rgba(232,121,249,0.15)]"
-                        onClick={() => navigate('/community')}
+                        className="bg-black/50 backdrop-blur-xl border border-orange-500/20 rounded-3xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-500 hover:border-orange-500/50"
+                        onClick={() => navigate('/goals')}
                     >
-                        {/* Background glow */}
-                        <div className="absolute -top-20 -right-20 w-40 h-40 bg-fuchsia-500/15 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-                            <Sparkles className="w-24 h-24 text-fuchsia-400" />
+                            <Target className="w-20 h-20 text-orange-400" />
                         </div>
 
-                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2 relative z-10">
-                            <div className="w-8 h-8 rounded-lg bg-fuchsia-500/20 flex items-center justify-center border border-fuchsia-500/30">
-                                <Rocket className="w-4 h-4 text-fuchsia-400 drop-shadow-[0_0_6px_rgba(232,121,249,0.5)]" />
+                        <h3 className="text-lg font-bold mb-2 flex items-center gap-2 relative z-10">
+                            <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
+                                <Target className="w-4 h-4 text-orange-400" />
                             </div>
-                            <span className="group-hover:text-fuchsia-300 transition-colors">Community</span>
+                            <span className="group-hover:text-orange-300 transition-colors">Goals</span>
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-6 relative z-10">
-                            Connect with other hustlers, share wins, and get feedback.
+                        <p className="text-xs text-muted-foreground mb-4 relative z-10">
+                            Set & track
                         </p>
 
-                        {/* Animated particles */}
-                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                            <motion.div
-                                animate={{ y: [0, -60], opacity: [0, 1, 0] }}
-                                transition={{ duration: 3, repeat: Infinity }}
-                                className="absolute bottom-10 left-1/4 w-1 h-1 bg-fuchsia-400 rounded-full"
-                            />
-                            <motion.div
-                                animate={{ y: [0, -40], opacity: [0, 1, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, delay: 1 }}
-                                className="absolute bottom-10 right-1/4 w-1.5 h-1.5 bg-purple-400 rounded-full"
-                            />
-                        </div>
-
                         <Button
-                            className="w-full bg-fuchsia-500/10 hover:bg-fuchsia-500/20 border border-fuchsia-500/30 hover:border-fuchsia-500/50 text-fuchsia-300 hover:text-fuchsia-200 relative z-10"
+                            size="sm"
+                            className="w-full bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-300 relative z-10"
                         >
-                            Enter Hub
+                            View Goals
                         </Button>
                     </motion.div>
                 </div>

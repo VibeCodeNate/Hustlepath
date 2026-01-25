@@ -18,6 +18,8 @@ import { Settings } from './pages/Settings';
 import { ExtraObjectives } from './pages/ExtraObjectives';
 import { Earnings } from './pages/Earnings';
 import { Goals } from './pages/Goals';
+import { Shop } from './pages/Shop';
+import { Profile } from './pages/Profile';
 
 function App() {
   return (
@@ -91,6 +93,21 @@ function App() {
             <Route path="/goals" element={
               <ProtectedRoute>
                 <Goals />
+              </ProtectedRoute>
+            } />
+            <Route path="/shop" element={
+              <ProtectedRoute>
+                <Shop />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/:userId" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
           </Routes>
