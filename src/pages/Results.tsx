@@ -75,6 +75,10 @@ export function Results() {
         if (progress?.generated_hustles && progress.generated_hustles.length > 0) {
             console.log("Loading persisted results from DB");
             setRecommendations(progress.generated_hustles);
+
+            // Initialize excluded titles with the current ones so reroll doesn't repeat them
+            setExcludedTitles(progress.generated_hustles.map((h: any) => h.title));
+
             setLoading(false);
             return;
         }
@@ -110,7 +114,7 @@ export function Results() {
                 - Frustration: ${answersData.frustration}
                 - Vehicle Access: ${answersData.vehicle}
 
-                ${excludedTitles.length > 0 ? `CRITICAL: Do NOT include these previously suggested quests: ${excludedTitles.join(', ')}` : ''}
+                ${excludedTitles.length > 0 ? `CRITICAL: You MUST generate completely DIFFERENT side hustles than these previous ones. Do not reuse the same business model or topic: ${excludedTitles.join(', ')}` : ''}
 
                 Pool of Options (Tailor the title/angle to the user):
                 - Baking business / Custom Dessert Orders
