@@ -4,6 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { openai } from '../lib/openai';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/auth'; // Import Auth
 import { motion } from 'framer-motion';
 import {
     CheckCircle2,
@@ -30,12 +31,33 @@ interface ExplainerContent {
 export function Explainer() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { hustle, answers } = location.state || {};
+    const { user, profile, updateProfile, refreshProfile } = useAuth();
+
+    // Fallback: If no state, maybe we can recover from profile?
+    const stateHustle = location.state?.hustle;
+    const stateAnswers = location.state?.answers;
+
+    const [hustle, setHustle] = useState<any>(stateHustle || null);
+
+    // Use profile answers if location state missing
+    const answers = stateAnswers || profile?.quiz_answers || {};
 
     const [loading, setLoading] = useState(true);
     const [content, setContent] = useState<ExplainerContent | null>(null);
     const [activeWeek, setActiveWeek] = useState(0);
     const [upgrading, setUpgrading] = useState(false);
+
+    // Map category to Niche ID for Dashboard
+    const getNicheId = (category: string): string => {
+        if (!category) return 'general';
+        const map: Record<string, string> = {
+            'tech': 'freelancing', // Approximate mapping
+            'creative': 'content_creation',
+            'biz': 'ecommerce',
+            'service': 'general'
+        };
+        return map[category] || 'general';
+    };
 
     const handleUpgrade = async () => {
         setUpgrading(true);
@@ -55,12 +77,51 @@ export function Explainer() {
         }
     };
 
-    // Redirect if no state
+    // 1. Recover state if missing (Refresh handling)
     useEffect(() => {
-        if (!hustle) {
+        if (!hustle && profile?.current_hustle_title) {
+            // If we have a title but no full object, we might need to "fake" the object 
+            // or fetch it. For now, let's redirect to specific roadmap if PRO
+            if (profile.is_pro) {
+                navigate('/roadmap');
+                return;
+            }
+            // Otherwise redirect to results to pick again
+            navigate('/results');
+        } else if (!hustle && !profile) {
             navigate('/assessment');
         }
-    }, [hustle, navigate]);
+    }, [hustle, profile, navigate]);
+
+    // 2. Persist Selection if PRO
+    useEffect(() => {
+        const key = `hustlepath_saved_${user?.id}`;
+        if (hustle && user && profile?.is_pro && !localStorage.getItem(key)) {
+            const saveSelection = async () => {
+                const nicheId = getNicheId(hustle.category);
+
+                // Update Profile Title
+                if (profile.current_hustle_title !== hustle.title) {
+                    await updateProfile({
+                        current_hustle_title: hustle.title,
+                        current_hustle_id: hustle.category // Using category as ID for now or title hash
+                    });
+                }
+
+                // Update Progress Niche (Direct DB call as updateProfile doesn't touch progress)
+                const { error } = await supabase
+                    .from('user_progress')
+                    .update({ niche_id: nicheId })
+                    .eq('user_id', user.id);
+
+                if (!error) {
+                    localStorage.setItem(key, 'true'); // Prevent excessive writes
+                    refreshProfile();
+                }
+            };
+            saveSelection();
+        }
+    }, [hustle, user, profile?.is_pro]); // Intentionally not checking other profile fields to avoid loops
 
     useEffect(() => {
         if (!hustle) return;
@@ -226,56 +287,91 @@ export function Explainer() {
                         </div>
                     </div>
 
-                    {/* Locked Section Teaser (Upgrade CTA) */}
-                    <div className="relative rounded-3xl border border-white/10 bg-black/40 overflow-hidden mb-20 min-h-[400px]">
-                        {/* Blur Layer */}
-                        <div className="absolute inset-0 backdrop-blur-md bg-black/60 z-10 flex flex-col items-center justify-center p-8 text-center">
-                            <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-6">
-                                <Lock className="w-8 h-8 text-white/50" />
+                    {/* PRO CONTENT UNLOCKED (or CTA if not pro) */}
+                    {!profile?.is_pro ? (
+                        <div className="relative rounded-3xl border border-white/10 bg-black/40 overflow-hidden mb-20 min-h-[400px]">
+                            {/* Blur Layer */}
+                            <div className="absolute inset-0 backdrop-blur-md bg-black/60 z-10 flex flex-col items-center justify-center p-8 text-center">
+                                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-6">
+                                    <Lock className="w-8 h-8 text-white/50" />
+                                </div>
+                                <h3 className="text-3xl font-bold text-white mb-4">Unlock Full Mission Data</h3>
+                                <p className="text-xl text-white/60 max-w-md mb-8">
+                                    Get access to advanced growth tactics, pro tools list, and community support to accelerate your earnings.
+                                </p>
+                                <Button
+                                    size="lg"
+                                    className="text-lg px-12 py-6 shadow-[0_0_30px_rgba(190,242,100,0.3)]"
+                                    onClick={handleUpgrade}
+                                    disabled={upgrading}
+                                >
+                                    {upgrading ? (
+                                        <>
+                                            <Loader2 className="mr-2 animate-spin" /> Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Upgrade to Pro <ArrowRight className="ml-2" />
+                                        </>
+                                    )}
+                                </Button>
                             </div>
-                            <h3 className="text-3xl font-bold text-white mb-4">Unlock Full Mission Data</h3>
-                            <p className="text-xl text-white/60 max-w-md mb-8">
-                                Get access to advanced growth tactics, pro tools list, and community support to accelerate your earnings.
-                            </p>
-                            <Button
-                                size="lg"
-                                className="text-lg px-12 py-6 shadow-[0_0_30px_rgba(190,242,100,0.3)]"
-                                onClick={handleUpgrade}
-                                disabled={upgrading}
-                            >
-                                {upgrading ? (
-                                    <>
-                                        <Loader2 className="mr-2 animate-spin" /> Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        Upgrade to Pro <ArrowRight className="ml-2" />
-                                    </>
-                                )}
-                            </Button>
-                        </div>
 
-                        {/* Fake Content Behind Blur */}
-                        <div className="p-8 opacity-20 pointer-events-none select-none min-h-[350px]">
+                            {/* Fake Content Behind Blur */}
+                            <div className="p-8 opacity-20 pointer-events-none select-none min-h-[350px]">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div>
+                                        <h3 className="text-2xl font-bold mb-4">Advanced Tactics</h3>
+                                        <div className="space-y-4">
+                                            <div className="h-4 bg-white/20 rounded w-3/4"></div>
+                                            <div className="h-4 bg-white/20 rounded w-full"></div>
+                                            <div className="h-4 bg-white/20 rounded w-5/6"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold mb-4">Pro Tools List</h3>
+                                        <div className="space-y-4">
+                                            <div className="h-4 bg-white/20 rounded w-1/2"></div>
+                                            <div className="h-4 bg-white/20 rounded w-2/3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* PRO CONTENT */
+                        <div className="bg-black/40 border border-primary/20 rounded-3xl p-8 mb-20">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="p-2 bg-primary/20 rounded-lg"><CheckCircle2 className="text-primary w-6 h-6" /></div>
+                                <h2 className="text-2xl font-bold">Pro Access: Advanced Intel</h2>
+                            </div>
+
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div>
-                                    <h3 className="text-2xl font-bold mb-4">Advanced Tactics</h3>
-                                    <div className="space-y-4">
-                                        <div className="h-4 bg-white/20 rounded w-3/4"></div>
-                                        <div className="h-4 bg-white/20 rounded w-full"></div>
-                                        <div className="h-4 bg-white/20 rounded w-5/6"></div>
+                                    <h3 className="text-xl font-bold text-white mb-4">Growth Tactics</h3>
+                                    <div className="space-y-4 text-white/70">
+                                        <p>• Leverage short-form video (TikTok/Reels) to drive organic traffic.</p>
+                                        <p>• Use cold outreach scripts (available in Resources) to land first clients.</p>
+                                        <p>• Bundle your services to increase average order value by 30%.</p>
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-bold mb-4">Pro Tools List</h3>
-                                    <div className="space-y-4">
-                                        <div className="h-4 bg-white/20 rounded w-1/2"></div>
-                                        <div className="h-4 bg-white/20 rounded w-2/3"></div>
+                                    <h3 className="text-xl font-bold text-white mb-4">Recommended Tools</h3>
+                                    <div className="space-y-4 text-white/70">
+                                        <p>• <strong>Notion</strong> - For project management.</p>
+                                        <p>• <strong>Canva</strong> - For quick design assets.</p>
+                                        <p>• <strong>Stripe</strong> - For payments (integrated).</p>
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="mt-8 pt-8 border-t border-white/10 text-center">
+                                <Button size="lg" className="w-full md:w-auto" onClick={() => navigate('/dashboard')}>
+                                    Accept Mission & Go to Dashboard
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             ) : null}
         </div>
