@@ -15,7 +15,7 @@ interface Profile {
     quiz_answers: any;
 }
 
-interface UserProgress {
+export interface UserProgress {
     xp: number;
     level: number;
     prestige: number;
@@ -23,6 +23,8 @@ interface UserProgress {
     streak_days: number;
     badges: string[];
     unlocked_items: string[];
+    niche_id?: string;
+    hustle_bucks: number; // Also adding hustle_bucks since I saw it missing in previous view (it wasn't in the view I just saw, but Dashboard uses it)
 }
 
 interface AuthContextType {

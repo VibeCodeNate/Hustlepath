@@ -8,11 +8,13 @@ import { LevelBadge } from '../components/LevelBadge';
 import { StreakCounter } from '../components/StreakCounter';
 import { CharacterPreview, DEFAULT_AVATAR, type AvatarConfig } from '../components/CharacterPreview';
 import { Button } from '../components/Button';
-import { Rocket, Target, Trophy, Clock, Map, Pencil, Sparkles, CheckCircle2, Loader2, DollarSign, Coins, X, Search, Users } from 'lucide-react';
+import { Rocket, Target, Trophy, Clock, Map, Pencil, Sparkles, CheckCircle2, Loader2, DollarSign, Coins, X, Search, Users, BookOpen, RefreshCw, AlertTriangle, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomQuote } from '../lib/motivationalQuotes';
 import { useSound } from '../lib/sound';
 import Confetti from 'react-confetti';
+import { HUSTLE_DEEP_DIVES } from '../lib/hustleDeepDives';
+import type { NicheType } from '../lib/nicheRoadmaps';
 
 interface SearchResult {
     id: string;
@@ -32,6 +34,10 @@ export function Dashboard() {
     const [hustleBucks, setHustleBucks] = useState(0);
     const [countdownTimer, setCountdownTimer] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
+    // State for Reset/Retake Quiz
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [resetting, setResetting] = useState(false);
+
     // Friend search
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -42,9 +48,50 @@ export function Dashboard() {
     const level = progress?.level || 1;
     const streak = progress?.streak_days || 0;
     const prestige = progress?.prestige || 0;
+    const nicheId = progress?.niche_id as NicheType || 'general';
 
     // Cast profile avatar config to expected type
     const avatarConfig = (profile?.avatar_config as unknown as AvatarConfig) || DEFAULT_AVATAR;
+
+    // Reset Progress & Retake Quiz Handler
+    const handleResetProgress = async () => {
+        if (!user) return;
+        setResetting(true);
+        try {
+            // Delete progress from DB
+            const { error: pError } = await supabase
+                .from('user_progress')
+                .delete()
+                .eq('user_id', user.id);
+
+            if (pError) throw pError;
+
+            // Delete roadmap progress
+            const { error: rError } = await supabase
+                .from('roadmap_progress')
+                .delete()
+                .eq('user_id', user.id);
+
+            if (rError) console.error('Error clearing roadmap:', rError);
+
+            // Clear local storage
+            localStorage.removeItem(`hustlepath_last_checkin_${user.id}`);
+            sessionStorage.removeItem('hustlepath_answers');
+
+            await refreshProfile();
+            navigate('/assessment');
+        } catch (err) {
+            console.error('Reset error:', err);
+            alert('Failed to reset progress. Please try again.');
+        } finally {
+            setResetting(false);
+        }
+    };
+
+    const deepDive = HUSTLE_DEEP_DIVES[nicheId] || HUSTLE_DEEP_DIVES['general'];
+
+
+
 
     // Check if can check in (resets at midnight local time)
     useEffect(() => {
@@ -172,6 +219,65 @@ export function Dashboard() {
     return (
         <div className="min-h-screen bg-background pb-20 overflow-hidden">
             <Navbar />
+
+            {/* Reset Quiz Confirmation Modal */}
+            <AnimatePresence>
+                {showResetModal && (
+                    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-zinc-900 border border-red-500/30 rounded-2xl p-6 max-w-md w-full"
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="bg-red-500/20 p-3 rounded-full">
+                                    <AlertTriangle className="w-8 h-8 text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-red-400">Restart Journey?</h3>
+                                    <p className="text-xs text-red-400/70 uppercase font-black tracking-widest">Danger Zone</p>
+                                </div>
+                            </div>
+
+                            <p className="text-white/80 mb-6 leading-relaxed">
+                                Are you sure you want to retake the quiz?
+                                <br /><br />
+                                <strong className="text-red-400">THIS CANNOT BE UNDONE.</strong>
+                                <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-white/60">
+                                    <li>Your XP and Level will be reset to 0.</li>
+                                    <li>Your Coins/HustleBucks will be lost.</li>
+                                    <li>All Roadmap progress will be deleted.</li>
+                                </ul>
+                            </p>
+
+                            <div className="flex gap-3">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setShowResetModal(false)}
+                                    className="flex-1"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleResetProgress}
+                                    disabled={resetting}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white border-none"
+                                >
+                                    {resetting ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 mr-2" />
+                                            Yes, Reset Everything
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Confetti */}
             {showConfetti && (
@@ -384,6 +490,69 @@ export function Dashboard() {
                     </div>
                 </motion.div>
 
+                {/* Deep Dive Section - Pro Feature */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className={`rounded-2xl p-8 mb-8 relative overflow-hidden border ${profile?.is_pro ? 'bg-black/40 border-primary/30' : 'bg-zinc-900/50 border-white/10'}`}
+                >
+                    {/* Background Glow */}
+                    <div className={`absolute -top-20 -right-20 w-60 h-60 blur-[100px] rounded-full ${profile?.is_pro ? 'bg-primary/20' : 'bg-gray-500/10'}`} />
+
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className={`p-3 rounded-xl border ${profile?.is_pro ? 'bg-primary/20 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-muted-foreground'}`}>
+                                <BookOpen className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">Your Hustle Deep Dive</h2>
+                                <p className="text-muted-foreground">Mastering the art of {deepDive.title}</p>
+                            </div>
+                            {!profile?.is_pro && (
+                                <div className="ml-auto">
+                                    <Lock className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                            )}
+                        </div>
+
+                        {profile?.is_pro ? (
+                            <div className="prose prose-invert max-w-none">
+                                <div className="bg-black/30 rounded-xl p-6 border border-white/5 mb-6">
+                                    <h3 className="text-xl font-bold text-primary mb-2">{deepDive.title}</h3>
+                                    <p className="text-lg text-white/90 italic mb-4">{deepDive.description}</p>
+                                    <div className="w-full h-px bg-white/10 my-4" />
+                                    <div className="space-y-4 text-white/80 leading-relaxed whitespace-pre-line">
+                                        {deepDive.breakdown}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-black/30 rounded-xl p-8 border border-white/5 text-center relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-white/5 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
+                                    <Lock className="w-12 h-12 text-white/20 mb-4" />
+                                    <h3 className="text-xl font-bold text-white mb-2">Pro Analysis Locked</h3>
+                                    <p className="text-muted-foreground max-w-md mb-6">
+                                        Upgrade to Pro to unlock the comprehensive 500+ word breakdown, strategy guide, and secret vendor lists for {deepDive.title}.
+                                    </p>
+                                    <Button
+                                        onClick={() => navigate('/settings')}
+                                        className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold hover:shadow-lg hover:from-yellow-300 hover:to-yellow-500 transition-all"
+                                    >
+                                        Unlock Full Guide
+                                    </Button>
+                                </div>
+                                {/* Dummy blurred content behind lock */}
+                                <div className="opacity-30 blur-sm select-none" aria-hidden="true">
+                                    <h3 className="text-xl font-bold text-primary mb-2">{deepDive.title}</h3>
+                                    <p className="text-lg text-white/90 italic mb-4">The ultimate guide to making money with...</p>
+                                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
                 {/* Friend Search Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -590,7 +759,20 @@ export function Dashboard() {
                         </Button>
                     </motion.div>
                 </div>
+
+                {/* Danger Zone: Retake Quiz */}
+                <div className="mt-12 mb-8 flex justify-center">
+                    <Button
+                        variant="ghost"
+                        onClick={() => setShowResetModal(true)}
+                        className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs uppercase tracking-widest font-bold"
+                    >
+                        <RefreshCw className="w-3 h-3 mr-2" />
+                        Retake Quiz & Reset Progress
+                    </Button>
+                </div>
             </div>
         </div>
+
     );
 }

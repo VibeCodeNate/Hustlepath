@@ -4,7 +4,7 @@ import { PostCard, type Post } from '../components/PostCard';
 import { Button } from '../components/Button';
 import { ArrowLeft, Settings, UserPlus, UserMinus, Ban, Trophy, Coins, Calendar, Users, Shield, Edit2, X, Image } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../lib/auth';
+import { useAuth, type UserProgress } from '../lib/auth';
 import { useSound } from '../lib/sound';
 import { NICHE_INFO } from '../lib/nicheRoadmaps';
 import { supabase } from '../lib/supabase';
@@ -19,12 +19,7 @@ interface UserProfile {
     profile_pic?: string;
 }
 
-interface UserProgress {
-    level: number;
-    xp: number;
-    hustle_bucks: number;
-    current_streak: number;
-}
+
 
 interface Badge {
     id: string;
@@ -147,7 +142,12 @@ export function Profile() {
                     level: progressData.level || 1,
                     xp: progressData.xp || 0,
                     hustle_bucks: progressData.hustle_bucks || 0,
-                    current_streak: progressData.current_streak || 0
+                    streak_days: progressData.streak_days || 0,
+                    prestige: progressData.prestige || 0,
+                    is_master_prestige: progressData.is_master_prestige || false,
+                    badges: progressData.badges || [],
+                    unlocked_items: progressData.unlocked_items || [],
+                    niche_id: progressData.niche_id || undefined
                 });
             }
 
