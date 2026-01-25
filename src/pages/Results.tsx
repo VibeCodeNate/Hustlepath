@@ -4,7 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { openai } from '../lib/openai';
 import { fireConfetti } from '../lib/confetti';
-import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
@@ -33,6 +33,7 @@ export function Results() {
     const { profile, progress, refreshProfile, loading: authLoading } = useAuth(); // Need refreshProfile to update UI after DB writes
     const { play } = useSound();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [processingUpgrade, setProcessingUpgrade] = useState(false);
 
     // Try to get answers from location state, fallback to sessionStorage, then profile
     const [answers, setAnswers] = useState<any>(() => {
@@ -223,6 +224,23 @@ export function Results() {
         if (rerollsLeft > 0) {
             play('click');
             generateAndSaveResults(answers || profile?.quiz_answers, true);
+        }
+    };
+
+    const handleUpgrade = async () => {
+        setProcessingUpgrade(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                body: { hustleTitle: 'HustlePath Pro Upgrade' }
+            });
+
+            if (error) throw error;
+            if (data?.url) window.location.href = data.url;
+            else throw new Error('No checkout URL returned');
+        } catch (err) {
+            console.error('Upgrade error:', err);
+            alert('Failed to start checkout. Please try again or contact support.');
+            setProcessingUpgrade(false);
         }
     };
 
@@ -577,12 +595,14 @@ export function Results() {
 
                             <Button
                                 className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold h-14 text-lg hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-shadow"
-                                onClick={() => {
-                                    // Placeholder for Stripe logic
-                                    window.open('https://buy.stripe.com/test_placeholder', '_blank');
-                                }}
+                                onClick={handleUpgrade}
+                                disabled={processingUpgrade}
                             >
-                                Upgrade Now - $4.99 / month
+                                {processingUpgrade ? (
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                                ) : (
+                                    'Upgrade Now - $4.99 / month'
+                                )}
                             </Button>
 
                             <button
