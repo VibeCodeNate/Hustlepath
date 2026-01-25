@@ -8,11 +8,17 @@ import { LevelBadge } from '../components/LevelBadge';
 import { StreakCounter } from '../components/StreakCounter';
 import { CharacterPreview, DEFAULT_AVATAR, type AvatarConfig } from '../components/CharacterPreview';
 import { Button } from '../components/Button';
-import { Rocket, Target, Trophy, Clock, Map, Pencil, Sparkles, CheckCircle2, Loader2, DollarSign, Coins, X } from 'lucide-react';
+import { Rocket, Target, Trophy, Clock, Map, Pencil, Sparkles, CheckCircle2, Loader2, DollarSign, Coins, X, Search, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomQuote } from '../lib/motivationalQuotes';
 import { useSound } from '../lib/sound';
 import Confetti from 'react-confetti';
+
+interface SearchResult {
+    id: string;
+    username: string;
+    avatar_url?: string;
+}
 
 export function Dashboard() {
     const navigate = useNavigate();
@@ -24,6 +30,12 @@ export function Dashboard() {
     const [currentQuote, setCurrentQuote] = useState('');
     const [showConfetti, setShowConfetti] = useState(false);
     const [hustleBucks, setHustleBucks] = useState(0);
+    const [countdownTimer, setCountdownTimer] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+    // Friend search
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [searching, setSearching] = useState(false);
 
     // Default values if data is still loading or missing
     const xp = progress?.xp || 0;
@@ -34,20 +46,45 @@ export function Dashboard() {
     // Cast profile avatar config to expected type
     const avatarConfig = (profile?.avatar_config as unknown as AvatarConfig) || DEFAULT_AVATAR;
 
-    // Check if can check in (24hr cooldown)
+    // Check if can check in (resets at midnight local time)
     useEffect(() => {
         if (!user) return;
 
-        const lastCheckIn = localStorage.getItem(`hustlepath_last_checkin_${user.id}`);
-        if (lastCheckIn) {
-            const lastDate = new Date(lastCheckIn);
+        const checkReset = () => {
+            const lastCheckIn = localStorage.getItem(`hustlepath_last_checkin_${user.id}`);
             const now = new Date();
-            const hoursSinceLastCheckIn = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
-            setCanCheckIn(hoursSinceLastCheckIn >= 24);
-        }
+
+            // Get midnight of today in local time
+            const todayMidnight = new Date(now);
+            todayMidnight.setHours(0, 0, 0, 0);
+
+            // Get midnight of tomorrow
+            const tomorrowMidnight = new Date(todayMidnight);
+            tomorrowMidnight.setDate(tomorrowMidnight.getDate() + 1);
+
+            if (lastCheckIn) {
+                const lastDate = new Date(lastCheckIn);
+                // Can check in if last check-in was before today's midnight
+                setCanCheckIn(lastDate < todayMidnight);
+            } else {
+                setCanCheckIn(true);
+            }
+
+            // Calculate countdown to midnight
+            const diff = tomorrowMidnight.getTime() - now.getTime();
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setCountdownTimer({ hours, minutes, seconds });
+        };
+
+        checkReset();
+        const interval = setInterval(checkReset, 1000);
 
         // Load hustle bucks
         loadHustleBucks();
+
+        return () => clearInterval(interval);
     }, [user]);
 
     const loadHustleBucks = async () => {
@@ -60,6 +97,33 @@ export function Dashboard() {
 
         if (data) {
             setHustleBucks(data.hustle_bucks || 0);
+        }
+    };
+
+    // Friend search handler
+    const handleSearch = async (query: string) => {
+        setSearchQuery(query);
+        if (query.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        setSearching(true);
+        try {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_url')
+                .neq('id', user?.id || '')
+                .ilike('username', `%${query}%`)
+                .limit(5);
+
+            if (data) {
+                setSearchResults(data);
+            }
+        } catch (err) {
+            console.error('Search error:', err);
+        } finally {
+            setSearching(false);
         }
     };
 
@@ -217,7 +281,7 @@ export function Dashboard() {
                 />
 
                 {/* Grid overlay */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear_gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:60px_60px]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:60px_60px]" />
             </div>
 
             <div className="container mx-auto px-4 pt-20 md:pt-24 relative z-10">
@@ -264,23 +328,34 @@ export function Dashboard() {
                         </div>
 
                         <StreakCounter days={streak} className="flex-1 md:flex-none justify-center" />
-                        <Button
-                            onClick={handleDailyCheckIn}
-                            disabled={checkingIn || !canCheckIn}
-                            className={`flex-1 md:flex-none text-sm md:text-base relative overflow-hidden transition-all duration-300 ${!canCheckIn
-                                ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                                : 'glow-primary hover:shadow-[0_0_30px_rgba(190,242,100,0.4)]'
-                                }`}
-                        >
-                            {checkingIn ? (
-                                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                            ) : !canCheckIn ? (
-                                <CheckCircle2 className="mr-2 w-4 h-4" />
-                            ) : (
-                                <Rocket className="mr-2 w-4 h-4" />
+
+                        {/* Check-in with Countdown */}
+                        <div className="flex flex-col items-center">
+                            <Button
+                                onClick={handleDailyCheckIn}
+                                disabled={checkingIn || !canCheckIn}
+                                className={`flex-1 md:flex-none text-sm md:text-base relative overflow-hidden transition-all duration-300 ${!canCheckIn
+                                    ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                                    : 'glow-primary hover:shadow-[0_0_30px_rgba(190,242,100,0.4)]'
+                                    }`}
+                            >
+                                {checkingIn ? (
+                                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                                ) : !canCheckIn ? (
+                                    <CheckCircle2 className="mr-2 w-4 h-4" />
+                                ) : (
+                                    <Rocket className="mr-2 w-4 h-4" />
+                                )}
+                                {!canCheckIn ? 'Checked In!' : <><span className="hidden sm:inline">Daily </span>Check-in</>}
+                            </Button>
+                            {/* Countdown timer */}
+                            {!canCheckIn && (
+                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    Resets in {countdownTimer.hours}h {countdownTimer.minutes}m
+                                </div>
                             )}
-                            {!canCheckIn ? 'Checked In!' : <><span className="hidden sm:inline">Daily </span>Check-in</>}
-                        </Button>
+                        </div>
                     </div>
                 </motion.div>
 
@@ -306,6 +381,57 @@ export function Dashboard() {
                         </div>
                         <XPBar xp={xp} level={level} />
                     </div>
+                </motion.div>
+
+                {/* Friend Search Card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="bg-black/40 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-6 mb-8 relative overflow-hidden"
+                >
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/10 blur-[60px] rounded-full" />
+
+                    <h2 className="font-bold text-lg flex items-center gap-2 mb-4">
+                        <Users className="w-5 h-5 text-purple-400" />
+                        Find Friends
+                    </h2>
+
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            placeholder="Search by username..."
+                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-10 text-sm focus:outline-none focus:border-purple-500/50 transition-colors"
+                        />
+                        {searching && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
+                        )}
+                    </div>
+
+                    {searchResults.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                            {searchResults.map((result) => (
+                                <button
+                                    key={result.id}
+                                    onClick={() => navigate(`/profile/${result.id}`)}
+                                    className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors text-left"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-lg">
+                                        {result.avatar_url || result.username?.charAt(0).toUpperCase() || '👤'}
+                                    </div>
+                                    <span className="font-medium">{result.username}</span>
+                                    <span className="ml-auto text-xs text-muted-foreground">View Profile →</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {searchQuery.length >= 2 && searchResults.length === 0 && !searching && (
+                        <p className="mt-3 text-sm text-muted-foreground text-center">No users found</p>
+                    )}
                 </motion.div>
 
                 {/* Dashboard Grid - 5 Cards */}
@@ -401,7 +527,7 @@ export function Dashboard() {
                         </Button>
                     </motion.div>
 
-                    {/* Earnings - NEW */}
+                    {/* Earnings */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -432,7 +558,7 @@ export function Dashboard() {
                         </Button>
                     </motion.div>
 
-                    {/* Goals - NEW */}
+                    {/* Goals */}
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}

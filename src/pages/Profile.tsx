@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
-
-import { ArrowLeft, Settings, UserPlus, UserMinus, Ban, Search, Trophy, Coins, Calendar, Users, MessageSquare, Image, Shield, Edit2 } from 'lucide-react';
+import { ArrowLeft, Settings, UserPlus, UserMinus, Ban, Trophy, Coins, Calendar, Users, MessageSquare, Image, Shield, Edit2, X, Repeat2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { useSound } from '../lib/sound';
@@ -15,6 +14,8 @@ interface UserProfile {
     avatar_url?: string;
     current_hustle_id?: string;
     created_at?: string;
+    calling_card?: string;
+    profile_pic?: string;
 }
 
 interface UserProgress {
@@ -31,6 +32,25 @@ interface Badge {
     description: string;
     earnedAt: string;
 }
+
+// Pre-defined calling cards
+const CALLING_CARDS = [
+    { id: 'hustler', name: 'Hustler Certified', gradient: 'from-yellow-600 to-orange-600' },
+    { id: 'grinder', name: 'Grind Never Stops', gradient: 'from-red-600 to-pink-600' },
+    { id: 'boss', name: 'Boss Mode', gradient: 'from-purple-600 to-indigo-600' },
+    { id: 'legend', name: 'Legend Status', gradient: 'from-cyan-600 to-blue-600' },
+    { id: 'empire', name: 'Empire Builder', gradient: 'from-green-600 to-teal-600' },
+    { id: 'diamond', name: 'Diamond Hands', gradient: 'from-blue-400 to-purple-400' },
+    { id: 'moon', name: 'To The Moon', gradient: 'from-indigo-600 to-purple-600' },
+    { id: 'fire', name: 'On Fire', gradient: 'from-orange-500 to-red-500' },
+    { id: 'default', name: '', gradient: 'from-fuchsia-900/50 via-purple-900/50 to-indigo-900/50' },
+];
+
+// Pre-defined profile pictures
+const PROFILE_PICS = [
+    '👤', '😎', '🧑‍💼', '👨‍💻', '👩‍💻', '🦁', '🐺', '🦅', '🔥', '💎',
+    '🚀', '⚡', '🎯', '💰', '👑', '🏆', '💪', '🎮', '🌟', '✨'
+];
 
 // Pre-defined badges
 const ALL_BADGES: Badge[] = [
@@ -73,9 +93,18 @@ export function Profile() {
     const [blocked, setBlocked] = useState<string[]>([]);
     const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
-    const [showSearch, setShowSearch] = useState(false);
+
+    // Modal states
+    const [showProfilePicModal, setShowProfilePicModal] = useState(false);
+    const [showCallingCardModal, setShowCallingCardModal] = useState(false);
+    const [showFollowersModal, setShowFollowersModal] = useState(false);
+    const [showFollowingModal, setShowFollowingModal] = useState(false);
+    const [followerProfiles, setFollowerProfiles] = useState<UserProfile[]>([]);
+    const [followingProfiles, setFollowingProfiles] = useState<UserProfile[]>([]);
+
+    // Local customization
+    const [selectedProfilePic, setSelectedProfilePic] = useState('👤');
+    const [selectedCallingCard, setSelectedCallingCard] = useState('default');
 
     const isOwnProfile = !userId || userId === user?.id;
     const profileId = userId || user?.id;
@@ -145,6 +174,14 @@ export function Profile() {
 
                 const badges = localStorage.getItem(`hustlepath_badges_${profileId}`);
                 if (badges) setEarnedBadges(JSON.parse(badges));
+
+                // Load customization
+                const customization = localStorage.getItem(`hustlepath_customization_${profileId}`);
+                if (customization) {
+                    const { profilePic, callingCard } = JSON.parse(customization);
+                    setSelectedProfilePic(profilePic || '👤');
+                    setSelectedCallingCard(callingCard || 'default');
+                }
             }
         } catch (err) {
             console.error('Error loading profile:', err);
@@ -187,21 +224,46 @@ export function Profile() {
         play('click');
     };
 
-    const handleSearch = async (query: string) => {
-        setSearchQuery(query);
-        if (query.length < 2) {
-            setSearchResults([]);
-            return;
-        }
+    const saveCustomization = (profilePic: string, callingCard: string) => {
+        if (!user) return;
+        localStorage.setItem(`hustlepath_customization_${user.id}`, JSON.stringify({
+            profilePic,
+            callingCard
+        }));
+        setSelectedProfilePic(profilePic);
+        setSelectedCallingCard(callingCard);
+        play('success');
+    };
 
+    const loadFollowerProfiles = async () => {
+        if (followers.length === 0) return;
         const { data } = await supabase
             .from('profiles')
             .select('id, username, avatar_url')
-            .ilike('username', `%${query}%`)
-            .limit(10);
+            .in('id', followers);
+        if (data) setFollowerProfiles(data as UserProfile[]);
+    };
 
-        if (data) {
-            setSearchResults(data);
+    const loadFollowingProfiles = async () => {
+        if (following.length === 0) return;
+        const { data } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .in('id', following);
+        if (data) setFollowingProfiles(data as UserProfile[]);
+    };
+
+    const handleRepost = async (post: any) => {
+        if (!user) return;
+        try {
+            await supabase.from('community_posts').insert({
+                user_id: user.id,
+                content: `🔄 Reposted from @${viewedProfile?.username}:\n\n${post.content}`,
+                post_type: 'repost'
+            });
+            play('success');
+        } catch (err) {
+            console.error('Repost failed:', err);
         }
     };
 
@@ -211,6 +273,7 @@ export function Profile() {
 
     const nicheInfo = NICHE_INFO.find(n => n.id === viewedProfile?.current_hustle_id) || NICHE_INFO[0];
     const rank = getRank(progress?.level || 1);
+    const currentCard = CALLING_CARDS.find(c => c.id === selectedCallingCard) || CALLING_CARDS[8];
 
     if (loading) {
         return (
@@ -228,6 +291,134 @@ export function Profile() {
         <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
             <Navbar />
 
+            {/* Profile Pic Modal */}
+            {showProfilePicModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowProfilePicModal(false)}>
+                    <div className="bg-zinc-900 border border-white/20 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold">Choose Profile Picture</h2>
+                            <button onClick={() => setShowProfilePicModal(false)} className="p-2 hover:bg-white/10 rounded-full">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-5 gap-3">
+                            {PROFILE_PICS.map((pic) => (
+                                <button
+                                    key={pic}
+                                    onClick={() => {
+                                        saveCustomization(pic, selectedCallingCard);
+                                        setShowProfilePicModal(false);
+                                    }}
+                                    className={`aspect-square rounded-xl flex items-center justify-center text-3xl transition-all ${selectedProfilePic === pic
+                                            ? 'bg-primary/30 border-2 border-primary scale-110'
+                                            : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                                        }`}
+                                >
+                                    {pic}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Calling Card Modal */}
+            {showCallingCardModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowCallingCardModal(false)}>
+                    <div className="bg-zinc-900 border border-white/20 rounded-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold">Choose Calling Card</h2>
+                            <button onClick={() => setShowCallingCardModal(false)} className="p-2 hover:bg-white/10 rounded-full">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            {CALLING_CARDS.filter(c => c.id !== 'default').map((card) => (
+                                <button
+                                    key={card.id}
+                                    onClick={() => {
+                                        saveCustomization(selectedProfilePic, card.id);
+                                        setShowCallingCardModal(false);
+                                    }}
+                                    className={`p-4 rounded-xl bg-gradient-to-r ${card.gradient} text-center font-bold transition-all ${selectedCallingCard === card.id
+                                            ? 'ring-2 ring-primary scale-105'
+                                            : 'hover:scale-105'
+                                        }`}
+                                >
+                                    {card.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Followers Modal */}
+            {showFollowersModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowFollowersModal(false)}>
+                    <div className="bg-zinc-900 border border-white/20 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold">Followers ({followers.length})</h2>
+                            <button onClick={() => setShowFollowersModal(false)} className="p-2 hover:bg-white/10 rounded-full">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                            {followerProfiles.length > 0 ? followerProfiles.map((profile) => (
+                                <button
+                                    key={profile.id}
+                                    onClick={() => {
+                                        navigate(`/profile/${profile.id}`);
+                                        setShowFollowersModal(false);
+                                    }}
+                                    className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 text-left"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xl">
+                                        {profile.avatar_url || '👤'}
+                                    </div>
+                                    <span className="font-medium">{profile.username}</span>
+                                </button>
+                            )) : (
+                                <p className="text-center text-muted-foreground py-8">No followers yet</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Following Modal */}
+            {showFollowingModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowFollowingModal(false)}>
+                    <div className="bg-zinc-900 border border-white/20 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold">Following ({following.length})</h2>
+                            <button onClick={() => setShowFollowingModal(false)} className="p-2 hover:bg-white/10 rounded-full">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                            {followingProfiles.length > 0 ? followingProfiles.map((profile) => (
+                                <button
+                                    key={profile.id}
+                                    onClick={() => {
+                                        navigate(`/profile/${profile.id}`);
+                                        setShowFollowingModal(false);
+                                    }}
+                                    className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 text-left"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xl">
+                                        {profile.avatar_url || '👤'}
+                                    </div>
+                                    <span className="font-medium">{profile.username}</span>
+                                </button>
+                            )) : (
+                                <p className="text-center text-muted-foreground py-8">Not following anyone yet</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="container mx-auto px-4 pt-20 pb-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -235,64 +426,34 @@ export function Profile() {
                         <ArrowLeft className="w-5 h-5 mr-2" />
                         Back
                     </Button>
-
-                    {/* Search */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowSearch(!showSearch)}
-                            className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
-                        >
-                            <Search className="w-5 h-5" />
-                        </button>
-
-                        {showSearch && (
-                            <div className="absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-white/10 rounded-xl p-4 shadow-2xl z-50">
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                    placeholder="Search users..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-primary/50"
-                                    autoFocus
-                                />
-                                {searchResults.length > 0 && (
-                                    <div className="mt-2 space-y-1 max-h-60 overflow-y-auto">
-                                        {searchResults.map((result) => (
-                                            <button
-                                                key={result.id}
-                                                onClick={() => {
-                                                    navigate(`/profile/${result.id}`);
-                                                    setShowSearch(false);
-                                                    setSearchQuery('');
-                                                }}
-                                                className="w-full flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg text-left"
-                                            >
-                                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                                    {result.username?.charAt(0).toUpperCase() || '?'}
-                                                </div>
-                                                <span>{result.username}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
                 </div>
 
-                {/* Profile Header Card */}
-                <div className="bg-gradient-to-r from-fuchsia-900/50 via-purple-900/50 to-indigo-900/50 border border-white/10 rounded-2xl overflow-hidden mb-6">
+                {/* Profile Header Card with Calling Card */}
+                <div className={`bg-gradient-to-r ${currentCard.gradient} border border-white/10 rounded-2xl overflow-hidden mb-6`}>
+                    {/* Calling Card Edit Button */}
+                    {isOwnProfile && (
+                        <button
+                            onClick={() => setShowCallingCardModal(true)}
+                            className="absolute top-4 right-4 p-2 bg-black/30 hover:bg-black/50 rounded-lg z-10"
+                        >
+                            <Edit2 className="w-4 h-4" />
+                        </button>
+                    )}
+
                     <div className="flex flex-col md:flex-row">
                         {/* Left: Avatar & Basic Info */}
                         <div className="p-6 bg-black/30 flex flex-col items-center text-center md:w-64">
                             <div className="relative mb-4">
                                 <div className="w-24 h-24 rounded-lg bg-gradient-to-br from-primary to-purple-600 p-1">
-                                    <div className="w-full h-full rounded-lg bg-zinc-900 flex items-center justify-center text-3xl">
-                                        {viewedProfile?.avatar_url || '👤'}
+                                    <div className="w-full h-full rounded-lg bg-zinc-900 flex items-center justify-center text-4xl">
+                                        {selectedProfilePic}
                                     </div>
                                 </div>
                                 {isOwnProfile && (
-                                    <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-black">
+                                    <button
+                                        onClick={() => setShowProfilePicModal(true)}
+                                        className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-black"
+                                    >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                 )}
@@ -335,15 +496,10 @@ export function Profile() {
                             )}
                         </div>
 
-                        {/* Right: Character Display */}
+                        {/* Right: Character Display - NO USERNAME TEXT */}
                         <div className="flex-1 p-6 relative min-h-[300px] flex items-center justify-center">
-                            {/* Large username display */}
-                            <h2 className="absolute right-6 top-1/2 -translate-y-1/2 text-6xl md:text-8xl font-black text-white/10 tracking-widest select-none" style={{ writingMode: 'vertical-rl' }}>
-                                {viewedProfile?.username?.toUpperCase().slice(0, 6) || 'USER'}
-                            </h2>
-
                             {/* Character placeholder */}
-                            <div className="text-9xl">👤</div>
+                            <div className="text-9xl">{selectedProfilePic}</div>
                         </div>
 
                         {/* Stats Sidebar */}
@@ -371,8 +527,8 @@ export function Profile() {
                                         <div
                                             key={badge.id}
                                             className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${earnedBadges.includes(badge.id)
-                                                ? 'bg-yellow-500/20 border border-yellow-500/50'
-                                                : 'bg-white/5 grayscale opacity-30'
+                                                    ? 'bg-yellow-500/20 border border-yellow-500/50'
+                                                    : 'bg-white/5 grayscale opacity-30'
                                                 }`}
                                             title={badge.name}
                                         >
@@ -395,12 +551,32 @@ export function Profile() {
                                     </span>
                                     <span className="font-bold">{daysSinceJoined}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-sm">
+                                {/* Clickable Followers */}
+                                <button
+                                    onClick={() => {
+                                        loadFollowerProfiles();
+                                        setShowFollowersModal(true);
+                                    }}
+                                    className="flex items-center justify-between text-sm w-full hover:bg-white/5 rounded p-1 -m-1"
+                                >
                                     <span className="text-muted-foreground flex items-center gap-2">
                                         <Users className="w-4 h-4" /> Followers
                                     </span>
-                                    <span className="font-bold">{followers.length}</span>
-                                </div>
+                                    <span className="font-bold text-primary">{followers.length}</span>
+                                </button>
+                                {/* Clickable Following */}
+                                <button
+                                    onClick={() => {
+                                        loadFollowingProfiles();
+                                        setShowFollowingModal(true);
+                                    }}
+                                    className="flex items-center justify-between text-sm w-full hover:bg-white/5 rounded p-1 -m-1"
+                                >
+                                    <span className="text-muted-foreground flex items-center gap-2">
+                                        <Users className="w-4 h-4" /> Following
+                                    </span>
+                                    <span className="font-bold text-cyan-400">{following.length}</span>
+                                </button>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-muted-foreground flex items-center gap-2">
                                         {nicheInfo.icon} Side Hustle
@@ -439,7 +615,7 @@ export function Profile() {
                         )}
                     </div>
 
-                    {/* Recent Posts */}
+                    {/* Recent Posts - Clickable with Repost */}
                     <div className="bg-black/40 border border-white/10 rounded-2xl p-6">
                         <h3 className="font-bold mb-4 flex items-center gap-2">
                             <MessageSquare className="w-5 h-5 text-cyan-400" />
@@ -447,11 +623,25 @@ export function Profile() {
                         </h3>
                         <div className="space-y-3">
                             {posts.length > 0 ? posts.slice(0, 3).map((post, i) => (
-                                <div key={i} className="p-3 bg-white/5 rounded-lg">
-                                    <p className="text-sm line-clamp-2">{post.content}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {new Date(post.created_at).toLocaleDateString()}
-                                    </p>
+                                <div key={i} className="p-3 bg-white/5 rounded-lg group">
+                                    <button
+                                        onClick={() => navigate(`/community?post=${post.id}`)}
+                                        className="text-left w-full"
+                                    >
+                                        <p className="text-sm line-clamp-2 hover:text-primary transition-colors">{post.content}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {new Date(post.created_at).toLocaleDateString()}
+                                        </p>
+                                    </button>
+                                    {!isOwnProfile && (
+                                        <button
+                                            onClick={() => handleRepost(post)}
+                                            className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                                        >
+                                            <Repeat2 className="w-3 h-3" />
+                                            Repost
+                                        </button>
+                                    )}
                                 </div>
                             )) : (
                                 <div className="text-center py-8 text-muted-foreground">
@@ -472,8 +662,8 @@ export function Profile() {
                                 <div
                                     key={badge.id}
                                     className={`aspect-square rounded-lg flex items-center justify-center text-2xl ${earnedBadges.includes(badge.id)
-                                        ? 'bg-yellow-500/20 border border-yellow-500/50'
-                                        : 'bg-white/5 grayscale opacity-30'
+                                            ? 'bg-yellow-500/20 border border-yellow-500/50'
+                                            : 'bg-white/5 grayscale opacity-30'
                                         }`}
                                     title={`${badge.name}: ${badge.description}`}
                                 >
