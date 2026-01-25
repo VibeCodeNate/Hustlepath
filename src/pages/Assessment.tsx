@@ -263,7 +263,8 @@ const RAW_QUESTIONS: Question[] = [
             "Deep focus Coding / Analyzing data",
             "Creating Art / Design / Video",
             "Researching / Learning topics",
-            "Organizing / Managing others"
+            "Organizing / Managing others",
+            "Cooking / Baking / Food Prep"
         ],
         key: "work_preference"
     }
