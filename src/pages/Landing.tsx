@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { PricingCard } from '../components/PricingCard';
-import { Brain, Target, TrendingUp, Sparkles, Zap, ShieldCheck } from 'lucide-react';
+import { Brain, Target, Sparkles, Zap, ShieldCheck, ShoppingBag, Palette, Users, Coins, Trophy, CalendarCheck, Rocket, Star, Flame } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 export function Landing() {
@@ -297,18 +297,18 @@ export function Landing() {
                                     />
 
                                     <item.icon className={`w-12 h-12 transition-all duration-300 ${item.color === 'primary'
-                                            ? 'text-primary drop-shadow-[0_0_10px_rgba(190,242,100,0.5)]'
-                                            : item.color === 'cyan'
-                                                ? 'text-cyan-400 group-hover:text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]'
-                                                : 'text-fuchsia-400 group-hover:text-fuchsia-300 drop-shadow-[0_0_10px_rgba(232,121,249,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(232,121,249,0.6)]'
+                                        ? 'text-primary drop-shadow-[0_0_10px_rgba(190,242,100,0.5)]'
+                                        : item.color === 'cyan'
+                                            ? 'text-cyan-400 group-hover:text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]'
+                                            : 'text-fuchsia-400 group-hover:text-fuchsia-300 drop-shadow-[0_0_10px_rgba(232,121,249,0.4)] group-hover:drop-shadow-[0_0_20px_rgba(232,121,249,0.6)]'
                                         }`} />
                                 </motion.div>
 
                                 <h3 className={`text-2xl font-bold mb-4 transition-colors duration-300 ${item.color === 'primary'
-                                        ? 'group-hover:text-primary group-hover:drop-shadow-[0_0_10px_rgba(190,242,100,0.4)]'
-                                        : item.color === 'cyan'
-                                            ? 'group-hover:text-cyan-300 group-hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.4)]'
-                                            : 'group-hover:text-fuchsia-300 group-hover:drop-shadow-[0_0_10px_rgba(232,121,249,0.4)]'
+                                    ? 'group-hover:text-primary group-hover:drop-shadow-[0_0_10px_rgba(190,242,100,0.4)]'
+                                    : item.color === 'cyan'
+                                        ? 'group-hover:text-cyan-300 group-hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.4)]'
+                                        : 'group-hover:text-fuchsia-300 group-hover:drop-shadow-[0_0_10px_rgba(232,121,249,0.4)]'
                                     }`}>{item.title}</h3>
                                 <p className="text-muted-foreground text-lg leading-relaxed max-w-xs mx-auto">{item.desc}</p>
                             </motion.div>
@@ -317,7 +317,7 @@ export function Landing() {
                 </div>
             </motion.section>
 
-            {/* Features Section - Neon Bento Grid Style */}
+            {/* Features Section - Comprehensive Platform Overview */}
             <section id="features" className="py-32 relative overflow-hidden">
                 {/* Animated Background */}
                 <div className="absolute inset-0 pointer-events-none">
@@ -345,123 +345,264 @@ export function Landing() {
 
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="text-center mb-20">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-sm font-medium text-primary mb-6"
+                        >
+                            <Star className="w-4 h-4" />
+                            <span>Complete Feature Overview</span>
+                        </motion.div>
                         <motion.h2
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-fuchsia-200 to-white"
+                            className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-fuchsia-200 to-white"
                         >
-                            Why HustlePath?
+                            Everything You Need to Win
                         </motion.h2>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
                             viewport={{ once: true }}
-                            className="text-muted-foreground max-w-2xl mx-auto text-lg"
+                            className="text-muted-foreground max-w-3xl mx-auto text-lg"
                         >
-                            Legacy advice says "follow your passion". We say "follow the data".
+                            HustlePath isn't just another course or PDF. It's a full gamified platform designed to keep you motivated,
+                            track your progress, and reward your hustle with real perks.
                         </motion.p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {/* Card 1 - AI Skill Analysis */}
+                    {/* Bento Grid Layout */}
+                    <div className="grid md:grid-cols-4 gap-6">
+
+                        {/* Card 1 - AI Skill Analysis (2 cols) */}
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             whileHover={{ y: -8, scale: 1.02 }}
-                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-primary/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_40px_rgba(190,242,100,0.15),inset_0_0_40px_rgba(190,242,100,0.02)]"
+                            className="md:col-span-2 rounded-3xl bg-black/60 backdrop-blur-xl border border-primary/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_40px_rgba(190,242,100,0.15),inset_0_0_40px_rgba(190,242,100,0.02)]"
                         >
-                            {/* Glow Effect */}
                             <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/20 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
                             <div className="relative z-10">
                                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(190,242,100,0.3)] transition-shadow duration-500">
                                     <Brain className="w-7 h-7 text-primary drop-shadow-[0_0_8px_rgba(190,242,100,0.5)]" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors duration-300">AI Skill Analysis</h3>
-                                <p className="text-muted-foreground">Our advanced algorithms scan 50+ data points about you to find side hustles that match your natural strengths.</p>
+                                <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors duration-300">AI-Powered Assessment</h3>
+                                <p className="text-muted-foreground text-lg leading-relaxed">
+                                    Take our comprehensive 10-question assessment that analyzes your skills, personality,
+                                    available time, and goals. Our AI matches you with the perfect side hustle from 15+ curated options
+                                    spanning freelancing, content creation, e-commerce, and more.
+                                </p>
                             </div>
                         </motion.div>
 
-                        {/* Card 2 - Personalized Roadmap (Large) */}
+                        {/* Card 2 - Personalized Roadmap (2 cols) */}
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
                             viewport={{ once: true }}
-                            whileHover={{ y: -8, scale: 1.01 }}
-                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-cyan-500/20 p-8 md:col-span-2 relative overflow-hidden group transition-all duration-500 hover:border-cyan-500/50 hover:shadow-[0_0_40px_rgba(34,211,238,0.15),inset_0_0_40px_rgba(34,211,238,0.02)]"
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="md:col-span-2 rounded-3xl bg-black/60 backdrop-blur-xl border border-cyan-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-cyan-500/50 hover:shadow-[0_0_40px_rgba(34,211,238,0.15),inset_0_0_40px_rgba(34,211,238,0.02)]"
                         >
-                            {/* Animated Gradient Background */}
                             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                            {/* Decorative Lines */}
-                            <div className="absolute bottom-0 right-0 w-1/2 h-1/2 pointer-events-none">
-                                <motion.div
-                                    animate={{ opacity: [0.1, 0.3, 0.1] }}
-                                    transition={{ duration: 3, repeat: Infinity }}
-                                    className="absolute bottom-8 right-8 w-32 h-[1px] bg-gradient-to-r from-cyan-500/50 to-transparent"
-                                />
-                                <motion.div
-                                    animate={{ opacity: [0.1, 0.3, 0.1] }}
-                                    transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
-                                    className="absolute bottom-16 right-8 w-24 h-[1px] bg-gradient-to-r from-cyan-500/30 to-transparent"
-                                />
-                                <motion.div
-                                    animate={{ opacity: [0.1, 0.3, 0.1] }}
-                                    transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-                                    className="absolute bottom-24 right-8 w-16 h-[1px] bg-gradient-to-r from-cyan-500/20 to-transparent"
-                                />
-                            </div>
-
                             <div className="relative z-10">
                                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/10 border border-cyan-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(34,211,238,0.3)] transition-shadow duration-500">
-                                    <Target className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                                    <Rocket className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-3 group-hover:text-cyan-300 transition-colors duration-300">Personalized Roadmap</h3>
-                                <p className="text-muted-foreground">Get a step-by-step interactive plan with weekly objectives, milestones, and direct feedback loops. No generic PDFs.</p>
+                                <h3 className="text-2xl font-bold mb-3 group-hover:text-cyan-300 transition-colors duration-300">Personalized Roadmap</h3>
+                                <p className="text-muted-foreground text-lg leading-relaxed">
+                                    Get a step-by-step interactive plan with weekly objectives, milestones, and direct feedback loops.
+                                    Each roadmap is tailored to YOUR specific side hustle with actionable tasks that adapt to your pace.
+                                    No generic PDFs—real progress tracking.
+                                </p>
                             </div>
                         </motion.div>
 
-                        {/* Card 3 - Gamified Growth Engine (Full Width) */}
+                        {/* Card 3 - XP & Leveling System */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-fuchsia-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-fuchsia-500/50 hover:shadow-[0_0_40px_rgba(232,121,249,0.15)]"
+                        >
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/10 border border-fuchsia-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(232,121,249,0.3)] transition-shadow duration-500">
+                                    <Trophy className="w-7 h-7 text-fuchsia-400 drop-shadow-[0_0_8px_rgba(232,121,249,0.5)]" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 group-hover:text-fuchsia-300 transition-colors duration-300">XP & Leveling</h3>
+                                <p className="text-muted-foreground">
+                                    Earn XP for every task you complete. Level up from "Newbie Hustler" to "Empire Builder"
+                                    and unlock exclusive perks at each tier. Your level is displayed on your public profile.
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* Card 4 - Hustle Bucks Currency */}
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
                             viewport={{ once: true }}
-                            whileHover={{ y: -8 }}
-                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-fuchsia-500/20 p-8 md:col-span-3 text-center relative overflow-hidden group transition-all duration-500 hover:border-fuchsia-500/50 hover:shadow-[0_0_40px_rgba(232,121,249,0.12),inset_0_0_40px_rgba(232,121,249,0.02)]"
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-yellow-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-yellow-500/50 hover:shadow-[0_0_40px_rgba(234,179,8,0.15)]"
                         >
-                            {/* Animated particles */}
-                            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                <motion.div
-                                    animate={{ y: [0, -100], opacity: [0, 1, 0] }}
-                                    transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }}
-                                    className="absolute bottom-0 left-1/4 w-1 h-1 bg-fuchsia-400 rounded-full"
-                                />
-                                <motion.div
-                                    animate={{ y: [0, -80], opacity: [0, 1, 0] }}
-                                    transition={{ duration: 5, repeat: Infinity, ease: "easeOut", delay: 1 }}
-                                    className="absolute bottom-0 left-1/2 w-1.5 h-1.5 bg-purple-400 rounded-full"
-                                />
-                                <motion.div
-                                    animate={{ y: [0, -120], opacity: [0, 1, 0] }}
-                                    transition={{ duration: 6, repeat: Infinity, ease: "easeOut", delay: 2 }}
-                                    className="absolute bottom-0 right-1/4 w-1 h-1 bg-fuchsia-300 rounded-full"
-                                />
-                            </div>
-
+                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500/10 blur-[40px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <div className="relative z-10">
-                                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-purple-500/10 border border-fuchsia-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(232,121,249,0.3)] transition-shadow duration-500">
-                                    <TrendingUp className="w-7 h-7 text-fuchsia-400 drop-shadow-[0_0_8px_rgba(232,121,249,0.5)]" />
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border border-yellow-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-shadow duration-500">
+                                    <Coins className="w-7 h-7 text-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-3 group-hover:text-fuchsia-300 transition-colors duration-300">Gamified Growth Engine</h3>
-                                <p className="text-muted-foreground max-w-2xl mx-auto">Stay consistent with XP, streaks, levels, and unlocks designed to keep your dopamine receptors firing on productivity, not scrolling.</p>
+                                <h3 className="text-xl font-bold mb-3 group-hover:text-yellow-300 transition-colors duration-300">Hustle Bucks 💰</h3>
+                                <p className="text-muted-foreground">
+                                    Earn coins (5-30) for completing tasks. Get bonus coins for leveling up!
+                                    Spend them in the shop on avatar customizations, calling cards, and exclusive titles.
+                                </p>
                             </div>
                         </motion.div>
+
+                        {/* Card 5 - Avatar Shop */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.25 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-emerald-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-emerald-500/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.15)]"
+                        >
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] transition-shadow duration-500">
+                                    <ShoppingBag className="w-7 h-7 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 group-hover:text-emerald-300 transition-colors duration-300">Reward Shop</h3>
+                                <p className="text-muted-foreground">
+                                    Browse 50+ items including animated avatar frames, exclusive titles like "Side Hustle Legend",
+                                    calling card backgrounds, and seasonal limited editions.
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* Card 6 - Avatar Customization */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-pink-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-pink-500/50 hover:shadow-[0_0_40px_rgba(236,72,153,0.15)]"
+                        >
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/10 border border-pink-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(236,72,153,0.3)] transition-shadow duration-500">
+                                    <Palette className="w-7 h-7 text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.5)]" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 group-hover:text-pink-300 transition-colors duration-300">Full Customization</h3>
+                                <p className="text-muted-foreground">
+                                    Express yourself! Customize your avatar frame, calling card background,
+                                    and display title. Show off your achievements and style to the community.
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* Card 7 - Community (2 cols) */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.35 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -8, scale: 1.01 }}
+                            className="md:col-span-2 rounded-3xl bg-black/60 backdrop-blur-xl border border-blue-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-blue-500/50 hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]"
+                        >
+                            <div className="absolute bottom-0 right-0 w-1/2 h-1/2 pointer-events-none">
+                                <motion.div
+                                    animate={{ opacity: [0.1, 0.3, 0.1] }}
+                                    transition={{ duration: 3, repeat: Infinity }}
+                                    className="absolute bottom-8 right-8 w-32 h-[1px] bg-gradient-to-r from-blue-500/50 to-transparent"
+                                />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/10 border border-blue-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(59,130,246,0.3)] transition-shadow duration-500">
+                                    <Users className="w-7 h-7 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                                </div>
+                                <h3 className="text-2xl font-bold mb-3 group-hover:text-blue-300 transition-colors duration-300">Community Hub</h3>
+                                <p className="text-muted-foreground text-lg leading-relaxed">
+                                    Connect with fellow hustlers! Share wins, ask questions, and get motivated by others on the same journey.
+                                    See community posts, like and comment, and build your network. Your calling card and level are displayed
+                                    on every interaction—flex your progress!
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* Card 8 - Daily Objectives */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-orange-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-orange-500/50 hover:shadow-[0_0_40px_rgba(249,115,22,0.15)]"
+                        >
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(249,115,22,0.3)] transition-shadow duration-500">
+                                    <CalendarCheck className="w-7 h-7 text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 group-hover:text-orange-300 transition-colors duration-300">Daily Objectives</h3>
+                                <p className="text-muted-foreground">
+                                    Fresh tasks every day tailored to your roadmap. Complete them to earn XP, coins,
+                                    and maintain your streak. Small consistent actions = massive results.
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* Card 9 - Streaks & Consistency */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.45 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -8, scale: 1.02 }}
+                            className="rounded-3xl bg-black/60 backdrop-blur-xl border border-red-500/20 p-8 relative overflow-hidden group transition-all duration-500 hover:border-red-500/50 hover:shadow-[0_0_40px_rgba(239,68,68,0.15)]"
+                        >
+                            <motion.div
+                                animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="absolute top-4 right-4"
+                            >
+                                <Flame className="w-6 h-6 text-red-400/50" />
+                            </motion.div>
+                            <div className="relative z-10">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/10 border border-red-500/30 flex items-center justify-center mb-6 group-hover:shadow-[0_0_25px_rgba(239,68,68,0.3)] transition-shadow duration-500">
+                                    <Flame className="w-7 h-7 text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 group-hover:text-red-300 transition-colors duration-300">🔥 Streak System</h3>
+                                <p className="text-muted-foreground">
+                                    Build momentum! Your streak grows each day you complete at least one task.
+                                    Long streaks unlock bonus rewards and special badges. Don't break the chain!
+                                </p>
+                            </div>
+                        </motion.div>
+
                     </div>
+
+                    {/* Bottom CTA */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        viewport={{ once: true }}
+                        className="text-center mt-16"
+                    >
+                        <p className="text-muted-foreground mb-6 text-lg">
+                            Ready to turn your side hustle dreams into reality?
+                        </p>
+                        <Button size="lg" className="h-14 px-10 text-lg" onClick={handleFreeCta}>
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            Start Your Journey
+                        </Button>
+                    </motion.div>
                 </div>
             </section>
 
