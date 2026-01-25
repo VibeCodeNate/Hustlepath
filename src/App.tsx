@@ -45,11 +45,7 @@ function App() {
                 <Explainer />
               </ProtectedRoute>
             } />
-            <Route path="/success" element={
-              <ProtectedRoute>
-                <Success />
-              </ProtectedRoute>
-            } />
+            <Route path="/success" element={<Success />} />
             <Route path="/dashboard" element={
               <ProtectedRoute requirePro={true}>
                 <Dashboard />

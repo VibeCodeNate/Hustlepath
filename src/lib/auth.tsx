@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Wrap getSession in a timeout race too
                 const sessionPromise = supabase.auth.getSession();
                 const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
-                    setTimeout(() => resolve({ data: { session: null } }), 5000)
+                    setTimeout(() => resolve({ data: { session: null } }), 10000)
                 );
 
                 const { data: { session } } = await Promise.race([
