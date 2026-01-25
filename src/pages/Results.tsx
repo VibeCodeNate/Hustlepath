@@ -29,7 +29,7 @@ interface Recommendation {
 export function Results() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, profile } = useAuth();
+    const { profile } = useAuth();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     // Try to get answers from location state, fallback to sessionStorage, then profile
