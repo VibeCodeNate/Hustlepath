@@ -105,7 +105,7 @@ export function Navbar() {
                         </>
                     ) : (
                         <>
-                            <Link to="/signup" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                            <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                                 Login
                             </Link>
                             <Link to="/assessment">

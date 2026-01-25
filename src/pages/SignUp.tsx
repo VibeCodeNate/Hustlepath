@@ -16,12 +16,17 @@ import {
     Loader2
 } from 'lucide-react';
 
-export function SignUp() {
+interface SignUpProps {
+    initialMode?: 'login' | 'signup';
+    allowToggle?: boolean;
+}
+
+export function SignUp({ initialMode = 'signup', allowToggle = true }: SignUpProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const { signUp, signIn } = useAuth();
 
-    const [isLogin, setIsLogin] = useState(false);
+    const [isLogin, setIsLogin] = useState(initialMode === 'login');
     const [isForgotPassword, setIsForgotPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -230,24 +235,26 @@ export function SignUp() {
                         </form>
 
                         {/* Toggle Login/Signup */}
-                        <div className="mt-6 text-center">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsLogin(!isLogin);
-                                    setIsForgotPassword(false);
-                                    setError('');
-                                    setSuccessMessage('');
-                                }}
-                                className="text-white/60 hover:text-primary transition-colors"
-                            >
-                                {isForgotPassword
-                                    ? 'Back to Sign In'
-                                    : isLogin
-                                        ? "Don't have an account? Sign up"
-                                        : 'Already have an account? Sign in'}
-                            </button>
-                        </div>
+                        {allowToggle && (
+                            <div className="mt-6 text-center">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsLogin(!isLogin);
+                                        setIsForgotPassword(false);
+                                        setError('');
+                                        setSuccessMessage('');
+                                    }}
+                                    className="text-white/60 hover:text-primary transition-colors"
+                                >
+                                    {isForgotPassword
+                                        ? 'Back to Sign In'
+                                        : isLogin
+                                            ? "Don't have an account? Sign up"
+                                            : 'Already have an account? Sign in'}
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
 
                     {/* Benefits (signup only) */}

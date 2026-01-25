@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy:function": "npx supabase functions deploy delete-account",
+    "deploy:function": "npx supabase functions deploy delete-account --no-verify-jwt",
     "login": "npx supabase login"
   },
   "dependencies": {
