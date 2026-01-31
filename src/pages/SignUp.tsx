@@ -67,7 +67,7 @@ export function SignUp({ initialMode = 'signup', allowToggle = true }: SignUpPro
                     const { data: profile } = await supabase
                         .from('profiles')
                         .select('is_pro')
-                        .eq('user_id', data.user.id)
+                        .eq('id', data.user.id)
                         .single();
 
                     if (profile?.is_pro) {
