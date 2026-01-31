@@ -59,8 +59,26 @@ export function SignUp({ initialMode = 'signup', allowToggle = true }: SignUpPro
                 setLoading(false);
                 return;
             } else if (isLogin) {
-                const { error } = await signIn(email, password);
+                const { data, error } = await signIn(email, password);
                 if (error) throw error;
+
+                // Smart Redirect Logic
+                if (data?.user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('is_pro')
+                        .eq('user_id', data.user.id)
+                        .single();
+
+                    if (profile?.is_pro) {
+                        navigate('/dashboard');
+                        return;
+                    } else {
+                        // Free users go to selection/results
+                        navigate('/results');
+                        return;
+                    }
+                }
             } else {
                 if (!username.trim()) {
                     throw new Error('Username is required');

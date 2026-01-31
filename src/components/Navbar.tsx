@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
-import { Sparkles, User, LogOut, Settings, ShoppingBag, Coins, Zap } from 'lucide-react';
+import { Sparkles, User, LogOut, Settings, ShoppingBag, Coins, Zap, ArrowRight } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
@@ -52,8 +52,19 @@ export function Navbar() {
                     {user ? (
                         <>
                             {/* PRO ONLY: Shop & Coins & Profile */}
-                            {profile?.is_pro && (
+                            {profile?.is_pro ? (
                                 <>
+                                    {/* DASHBOARD - Prominent Button */}
+                                    <Link to="/dashboard">
+                                        <Button
+                                            size="sm"
+                                            className="bg-primary hover:bg-primary/90 text-black font-bold shadow-[0_0_20px_rgba(190,242,100,0.4)] hover:shadow-[0_0_30px_rgba(190,242,100,0.6)] transition-all"
+                                        >
+                                            <Sparkles className="h-4 w-4 mr-2" />
+                                            Mission Control
+                                        </Button>
+                                    </Link>
+
                                     {/* SHOP - Prominent Button with Animation */}
                                     <Link to="/shop">
                                         <Button
@@ -88,6 +99,19 @@ export function Navbar() {
                                         <span className="hidden sm:inline">{profile?.username || 'Profile'}</span>
                                     </Link>
                                 </>
+                            ) : (
+                                <>
+                                    {/* FREE USER: Resume Mission Button */}
+                                    <Link to="/results">
+                                        <Button
+                                            size="sm"
+                                            className="bg-primary hover:bg-primary/90 text-black font-bold shadow-[0_0_20px_rgba(190,242,100,0.4)]"
+                                        >
+                                            Resume Mission
+                                            <ArrowRight className="h-4 w-4 ml-2" />
+                                        </Button>
+                                    </Link>
+                                </>
                             )}
 
                             {/* Settings (Always Visible) */}
@@ -110,11 +134,19 @@ export function Navbar() {
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                Login
+                            {/* LOGIN - BIG AND OBVIOUS */}
+                            <Link to="/login">
+                                <Button
+                                    size="sm"
+                                    className="bg-white/10 hover:bg-white/20 text-white font-semibold border border-white/20"
+                                >
+                                    Login to Account
+                                </Button>
                             </Link>
                             <Link to="/assessment">
-                                <Button size="sm">Start Free</Button>
+                                <Button size="sm" className="bg-primary text-black hover:bg-primary/90 font-bold shadow-lg shadow-primary/20">
+                                    Start Free Mission
+                                </Button>
                             </Link>
                         </>
                     )}
