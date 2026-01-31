@@ -37,10 +37,15 @@ export function Explainer() {
     const stateHustle = location.state?.hustle;
     const stateAnswers = location.state?.answers;
 
-    const [hustle, setHustle] = useState<any>(stateHustle || null);
-
-    // Use profile answers if location state missing
-    const answers = stateAnswers || profile?.quiz_answers || {};
+    interface HustleType {
+        title: string;
+        difficulty_score: number;
+        velocity_score: number;
+        income_score: number;
+        xp_value: number;
+        category?: string;
+    }
+    const [hustle] = useState<HustleType | null>(stateHustle || null);
 
     const [loading, setLoading] = useState(true);
     const [content, setContent] = useState<ExplainerContent | null>(null);
@@ -98,7 +103,7 @@ export function Explainer() {
         const key = `hustlepath_saved_${user?.id}`;
         if (hustle && user && profile?.is_pro && !localStorage.getItem(key)) {
             const saveSelection = async () => {
-                const nicheId = getNicheId(hustle.category);
+                const nicheId = getNicheId(hustle.category || '');
 
                 // Update Profile Title
                 if (profile.current_hustle_title !== hustle.title) {
@@ -121,13 +126,14 @@ export function Explainer() {
             };
             saveSelection();
         }
-    }, [hustle, user, profile?.is_pro]); // Intentionally not checking other profile fields to avoid loops
+    }, [hustle, user, profile?.is_pro, profile?.current_hustle_title, refreshProfile, updateProfile]); // Added missing dependencies
 
     useEffect(() => {
         if (!hustle) return;
 
         const fetchDetails = async () => {
             try {
+                const answers = stateAnswers || profile?.quiz_answers || {};
                 const prompt = `
                     Generate a specific "Mission Brief" for this Side Hustle Quest: "${hustle.title}".
                     
@@ -165,7 +171,7 @@ export function Explainer() {
         };
 
         fetchDetails();
-    }, [hustle, answers]);
+    }, [hustle, stateAnswers, profile?.quiz_answers]);
 
     if (!hustle) return null;
 

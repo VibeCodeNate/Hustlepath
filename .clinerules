@@ -1,0 +1,76 @@
+# HustlePath - Comprehensive Project Context & Rules
+
+## 1. Project Overview
+HustlePath is a gamified, mission-driven platform for finding and launching side hustles. It emphasizes a premium, Call of Duty-style aesthetic, providing users with AI-generated quest lines and a progress-based ecosystem.
+
+## 2. Core Tech Stack
+- **Frontend**: React 19 (Vite), TypeScript, Tailwind CSS v4, Framer Motion (animations), Lucide React (icons).
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions, Realtime).
+- **AI**: OpenAI API (GPT-4o) for generating mission briefs, first-dollar objectives, and 4-week roadmaps.
+- **Payments**: Stripe (managed via Edge Functions).
+
+## 3. Subscription & Payment Structure (Stripe)
+Access is gated by the `is_pro` boolean in the `profiles` table.
+- **Pro Tier**: Unlocks interactive roadmaps, video masterclasses, advanced community tools, and priority support.
+- **Implementation**:
+    - `create-checkout-session`: Edge function to initiate Stripe Checkout.
+    - `create-portal-session`: Edge function for the Stripe Customer Portal (billing management).
+    - `stripe-webhook`: Handles asynchronous events (e.g., `subscription_deleted` to revoke Pro status).
+
+## 4. Gamification System (XP & Hustle Bucks)
+The app uses a dual-currency and leveling system to drive engagement.
+- **XP (Experience Points)**: 
+    - Earned by completing tasks (objectives) and "Quests" (side hustles).
+    - Hustle Quest XP ranges from 300 to 1000 based on difficulty/velocity.
+    - Level progression is handled in `src/lib/gamification.ts`.
+- **Hustle Bucks (HB)**:
+    - **Earning**: Completing tasks (5-30 HB) and a 50 HB bonus for chaque Level Up.
+    - **Spending**: Used in the Item Shop for avatar and profile customization.
+- **Roadmap Logic**:
+    - **Objectives**: Modular tasks within a 4-week roadmap.
+    - **Time-Gating**: Weeks are locked for 7 days after the previous week is 100% completed (`src/lib/roadmap.ts`).
+
+## 5. Shop & Customization
+- **Shop Rotation**: A daily rotating storefront (`Shop.tsx`) with items from `src/lib/shopItems.ts`.
+- **Rarity Levels**: Common (Grey), Rare (Blue), Epic (Purple), Legendary (Amber/Gold).
+- **Categories**: Outfits, Hairstyles, Accessories, Emotes, Backgrounds, Calling Cards.
+- **Persistence**: Purchase status is stored in `user_progress` (Supabase) and synced to `localStorage`.
+
+## 6. Community & Social Features
+- **Feed**: Global feed in `Community.tsx` pulls from the `community_posts` table.
+- **Interactions**:
+    - **Posts**: Users share progress or general updates.
+    - **Reposts**: Content prefixed with `🔄 Reposted from `.
+    - **Saving**: Users can save posts (stored in `localStorage` by user ID).
+- **Social Integration**: Profile pages display the user's "Calling Card" and level.
+
+## 7. Profile & Account Management
+- **Profile Updates**: Users can edit their `display_name` and `avatar_url` in `Settings.tsx`.
+- **Account Deletion**: Handled via the `delete-account` edge function. It performs a hard delete of auth data, profiles, progress, and community posts.
+- **Auth Flow**: Restricted routes are managed via `ProtectedRoute.tsx` and the `useAuth` hook.
+
+## 8. Development Rules for AI (Cline)
+- **Design Aesthetic**: Strict adherence to "Premium Dark Mode". Use glassmorphism, glowing borders (primary neon green), and Framer Motion for all transitions.
+- **State Management**: Never bypass the `useAuth` hook for user data.
+- **Supabase interaction**: Always use the modular clients in `src/lib/supabase.ts` and `src/lib/openai.ts`.
+- **TypeScript**: No `any`. Use interfaces defined in `src/lib/roadmap.ts` and `src/lib/auth.tsx`.
+- **Tone**: Maintain a high-energy, mission-centric tone in all generated UI text.
+
+## 9. Deployment & Change Process
+Applying changes to HustlePath is a 3-part workflow. AI must guide the user through these steps to ensure the live environment stays in sync.
+
+### Step 1: Local Build & Verification
+Always ensure the code compiles before pushing. Vercel deployments will fail if there are TypeScript or Lint errors.
+- **Action**: Run `cmd /c "npm run build"` to check for errors.
+
+### Step 2: Version Control & Frontend (Git + Vercel)
+Vercel is linked to the Git repository. Pushing to the main branch triggers a frontend deployment automatically.
+- **Git Flow**:
+  1. `git add .`
+  2. `git commit -m "Description of changes"`
+  3. `git push origin main`
+
+### Step 3: Backend Deployment (Supabase Edge Functions)
+Changes to files in `supabase/functions/` are **not** automatically deployed by Git. They must be pushed manually via the Supabase CLI.
+- **Action**: Use `npx supabase functions deploy <function-name> --no-verify-jwt`.
+- **Common Functions**: `create-checkout-session`, `create-portal-session`, `stripe-webhook`, `delete-account`.
