@@ -30,25 +30,26 @@ export function Success() {
             await refreshProfile();
         };
 
-        // Poll for status update (webhook might delay 1-3s)
-        checkProStatus();
-        const interval = setInterval(() => {
-            if (!profile?.is_pro) {
-                checkProStatus();
-            } else {
-                clearInterval(interval);
-            }
-        }, 2000);
+    // Poll for status update (webhook might delay 1-3s)
+    checkProStatus();
+    const interval = setInterval(() => {
+        if (!profile?.is_pro) {
+            checkProStatus();
+        } else {
+            clearInterval(interval);
+            navigate('/'); // Redirect to home after successful payment verification
+        }
+    }, 2000);
 
-        // Stop polling after 15s to save resources
-        const stopTimer = setTimeout(() => clearInterval(interval), 15000);
+    // Stop polling after 15s to save resources
+    const stopTimer = setTimeout(() => clearInterval(interval), 15000);
 
         return () => {
             clearTimeout(timer);
             clearInterval(interval);
             clearTimeout(stopTimer);
         };
-    }, [profile?.is_pro]);
+    }, [profile?.is_pro, navigate, refreshProfile]);
 
     return (
         <div className="min-h-screen bg-background pb-20">
