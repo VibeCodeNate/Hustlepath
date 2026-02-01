@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Supabase Edge Function: create-checkout-session
 // Deno runtime for Supabase Edge Functions
 
