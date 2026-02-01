@@ -1,0 +1,32 @@
+=== TROUBLESHOOTING: DOUBLE PAYMENT ISSUE ===
+
+The webhook was just redeployed with detailed logging.
+
+To find the root cause, I need you to check whether Stripe's webhook events are actually being delivered successfully.
+
+STEP 1: Check Webhook Event Delivery Status
+-------------------------------------------
+1. Go to Stripe Dashboard
+2. Click "Developers" in the left sidebar
+3. Click "Webhooks"
+4. Click on your webhook endpoint ("sophisticated-voyage")
+5. Click the "Event deliveries" tab (NOT "Logs" - that's different!)
+6. Look at the most recent events
+
+WHAT TO LOOK FOR:
+- If you see ✓ with "Succeeded" - webhook is working, issue is elsewhere
+- If you see ✗ with "Failed" - click on it to see the error message
+  - "400 Webhook Error" = Signature mismatch (STRIPE_WEBHOOK_SECRET is wrong)
+  - "500 Server Error" = Code crashed (bug in webhook logic)
+  - Check the "Response" tab to see the exact error message
+
+STEP 2: Take a Screenshot
+-------------------------
+Take a screenshot of the Event Deliveries page showing recent events and their status.
+Send it to me so I can see exactly what's happening.
+
+STEP 3: Alternative Quick Test
+------------------------------
+Click "Send test event" button in Stripe's webhook page.
+Select "checkout.session.completed" and send it.
+Then check if the test event succeeded or failed.

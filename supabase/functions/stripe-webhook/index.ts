@@ -53,8 +53,10 @@ Deno.serve(async (req: Request) => {
                     const hustleTitle = session.metadata?.hustleTitle;
                     const nicheId = session.metadata?.nicheId;
 
+                    console.log(`Metadata - hustleTitle: ${hustleTitle}, nicheId: ${nicheId}`);
+
                     // Update Profile
-                    const { error: updateError } = await supabaseAdmin
+                    const { data: updateData, error: updateError, count } = await supabaseAdmin
                         .from("profiles")
                         .update({
                             is_pro: true,
@@ -63,10 +65,18 @@ Deno.serve(async (req: Request) => {
                             current_hustle_title: hustleTitle || undefined,
                             current_hustle_id: nicheId || undefined
                         })
-                        .eq("id", userId);
+                        .eq("id", userId)
+                        .select();
 
-                    if (updateError) console.error("Profile update failed:", updateError);
-                    else console.log(`User ${userId} upgraded to Pro! Hustle: ${hustleTitle}, Niche: ${nicheId}`);
+                    if (updateError) {
+                        console.error("Profile update failed:", updateError);
+                        console.error("Update error code:", updateError.code);
+                        console.error("Update error details:", updateError.details);
+                    } else {
+                        console.log(`User ${userId} upgraded to Pro! Hustle: ${hustleTitle}, Niche: ${nicheId}`);
+                        console.log(`Rows affected:`, updateData?.length || 0);
+                        console.log(`Update result:`, JSON.stringify(updateData));
+                    }
 
                     // Update User Progress with Niche
                     if (nicheId) {
@@ -153,7 +163,12 @@ Deno.serve(async (req: Request) => {
         return new Response(`Error: ${err.message}`, { status: 400 });
     }
 
-    return new Response(JSON.stringify({ received: true }), {
+    return new Response(JSON.stringify({
+        received: true,
+        event_type: event.type,
+        processed: true,
+        timestamp: new Date().toISOString()
+    }), {
         headers: { "Content-Type": "application/json" },
     });
 });
