@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +28,9 @@ export function Shop() {
     const [purchasing, setPurchasing] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string>('all');
 
+    // Track the date to detect day changes
+    const lastDateRef = useRef(new Date().toDateString());
+
     // Load shop items and user data
     useEffect(() => {
         setShopItems(getDailyShopItems());
@@ -44,13 +47,24 @@ export function Shop() {
         }
     }, [user]);
 
-    // Update refresh timer
+    // Update refresh timer and check for day change
     useEffect(() => {
         const interval = setInterval(() => {
-            setRefreshTimer(getTimeUntilShopRefresh());
+            const timeUntil = getTimeUntilShopRefresh();
+            setRefreshTimer(timeUntil);
+
+            // Check if date has changed
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastDateRef.current) {
+                // Day changed! Refresh items
+                console.log("New day detected! Refreshing shop...");
+                setShopItems(getDailyShopItems());
+                lastDateRef.current = currentDate;
+                play('success'); // Optional: play sound on refresh
+            }
         }, 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [play]);
 
     const loadHustleBucks = async () => {
         if (!user) return;
@@ -367,9 +381,9 @@ export function Shop() {
                                     <h3 className="font-extrabold text-xl truncate text-left text-white mb-3" title={item.name}>{item.name}</h3>
                                     <div className="flex items-center justify-between">
                                         <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${item.rarity === 'legendary' ? 'bg-amber-500/20 text-amber-300' :
-                                                item.rarity === 'epic' ? 'bg-purple-500/20 text-purple-300' :
-                                                    item.rarity === 'rare' ? 'bg-blue-500/20 text-blue-300' :
-                                                        'bg-gray-500/20 text-gray-300'
+                                            item.rarity === 'epic' ? 'bg-purple-500/20 text-purple-300' :
+                                                item.rarity === 'rare' ? 'bg-blue-500/20 text-blue-300' :
+                                                    'bg-gray-500/20 text-gray-300'
                                             }`}>{item.rarity}</span>
 
                                         <div className="flex items-center gap-1.5">
