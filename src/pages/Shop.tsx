@@ -143,6 +143,7 @@ export function Shop() {
             backgroundImage: `url('${visualUrl}')`,
             backgroundPosition: `-${col * baseSize * scale}px -${row * baseSize * scale}px`,
             backgroundSize: `${baseSize * sheetCols * scale}px auto`,
+            backgroundRepeat: 'no-repeat',
             imageRendering: 'pixelated' as const
         } : {
             width: baseSize * scale,
@@ -337,38 +338,38 @@ export function Shop() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1, type: "spring" }}
                                 onClick={() => setSelectedItem(item)}
-                                className={`group relative bg-gradient-to-b ${getRarityGradient(item.rarity)} rounded-3xl overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/10 focus:outline-none focus:ring-4 focus:ring-white/30 ${isOwned ? 'opacity-80 grayscale-[0.5]' : ''
+                                className={`group relative flex flex-col bg-gradient-to-b ${getRarityGradient(item.rarity)} rounded-3xl overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/10 focus:outline-none focus:ring-4 focus:ring-white/30 ${isOwned ? 'opacity-80 grayscale-[0.5]' : ''
                                     }`}
                             >
                                 {/* Active Selection Border */}
-                                <div className={`absolute inset-0 border-4 ${getRarityBorder(item.rarity)} rounded-3xl opacity-50 group-hover:opacity-100 transition-opacity`} />
+                                <div className={`absolute inset-0 border-4 ${getRarityBorder(item.rarity)} rounded-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none z-20`} />
 
                                 {/* Owned Badge */}
                                 {isOwned && (
-                                    <div className="absolute top-4 right-4 bg-green-500 text-black text-sm font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10 shadow-lg">
+                                    <div className="absolute top-4 right-4 bg-green-500 text-black text-sm font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-20 shadow-lg">
                                         <Check className="w-4 h-4" />
                                         Owned
                                     </div>
                                 )}
 
-                                {/* Item Preview Area */}
-                                <div className="aspect-[4/5] flex items-center justify-center p-8 bg-black/20 group-hover:bg-black/10 transition-colors relative">
+                                {/* Item Preview Area - Stacked on top */}
+                                <div className="aspect-square w-full flex items-center justify-center p-8 bg-black/20 group-hover:bg-black/10 transition-colors relative">
                                     {/* Spotlight effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
                                     <div className="relative z-10 scale-125 group-hover:scale-150 transition-transform duration-300">
                                         <SpriteIcon item={item} size="xl" />
                                     </div>
                                 </div>
 
-                                {/* Item Info */}
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-md p-5 border-t border-white/10">
-                                    <h3 className="font-extrabold text-xl truncate text-left">{item.name}</h3>
-                                    <div className="flex items-center justify-between mt-2">
+                                {/* Item Info - Stacked below */}
+                                <div className="w-full bg-slate-900/95 backdrop-blur-md p-5 border-t border-white/10 flex flex-col justify-between flex-grow">
+                                    <h3 className="font-extrabold text-xl truncate text-left text-white mb-3" title={item.name}>{item.name}</h3>
+                                    <div className="flex items-center justify-between">
                                         <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${item.rarity === 'legendary' ? 'bg-amber-500/20 text-amber-300' :
-                                            item.rarity === 'epic' ? 'bg-purple-500/20 text-purple-300' :
-                                                item.rarity === 'rare' ? 'bg-blue-500/20 text-blue-300' :
-                                                    'bg-gray-500/20 text-gray-300'
+                                                item.rarity === 'epic' ? 'bg-purple-500/20 text-purple-300' :
+                                                    item.rarity === 'rare' ? 'bg-blue-500/20 text-blue-300' :
+                                                        'bg-gray-500/20 text-gray-300'
                                             }`}>{item.rarity}</span>
 
                                         <div className="flex items-center gap-1.5">
