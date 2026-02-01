@@ -106,12 +106,10 @@ export function Shop() {
 
     const categories = [
         { id: 'all', name: 'All', icon: '🛒' },
-        { id: 'outfit', name: 'Outfits', icon: '👔' },
-        { id: 'hairstyle', name: 'Hairstyles', icon: '💇' },
-        { id: 'accessory', name: 'Accessories', icon: '💎' },
-        { id: 'emote', name: 'Emotes', icon: '💃' },
-        { id: 'background', name: 'Backgrounds', icon: '🌅' },
-        { id: 'calling_card', name: 'Calling Cards', icon: '🃏' },
+        { id: 'character', name: 'Characters', icon: '👤' },
+        { id: 'monster', name: 'Monsters', icon: '👹' },
+        { id: 'item', name: 'Items', icon: '🎒' },
+        { id: 'dino', name: 'Dinos', icon: '🦖' },
     ];
 
     const getRarityBorder = (rarity: ItemRarity) => {
@@ -124,17 +122,35 @@ export function Shop() {
     };
 
     const SpriteIcon = ({ item, size = 'md' }: { item: ShopItem, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
-        // Determine sheet URL (using placeholders if local assets missing)
-        const sheetUrl = `/assets/sprites_${item.spriteSheet}.png`;
-
-        // Calculate background position
-        // Assuming 32x32px sprites in a 16 column grid (512px width)
-        const col = item.spriteIndex % 16;
-        const row = Math.floor(item.spriteIndex / 16);
+        // Construct visual src
+        const visualUrl = `/assets/${item.src}`;
 
         // Scale factor for display
         const scale = size === 'xl' ? 4 : size === 'lg' ? 3 : size === 'md' ? 2 : 1;
         const spriteSize = 32;
+
+        const defaultCols = 16; // Use 16 columns as default for sheets
+        const col = item.spriteIndex % defaultCols;
+        const row = Math.floor(item.spriteIndex / defaultCols);
+
+        // If it's a sheet, we use background-position. 
+        // If it's not a sheet, we simply show the image.
+        const style = item.isSheet ? {
+            width: spriteSize * scale,
+            height: spriteSize * scale,
+            backgroundImage: `url('${visualUrl}')`,
+            backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
+            backgroundSize: `${spriteSize * defaultCols * scale}px auto`,
+            imageRendering: 'pixelated' as const
+        } : {
+            width: spriteSize * scale,
+            height: spriteSize * scale,
+            backgroundImage: `url('${visualUrl}')`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            imageRendering: 'pixelated' as const
+        };
 
         return (
             <div
@@ -142,44 +158,32 @@ export function Shop() {
                 style={{
                     width: spriteSize * scale,
                     height: spriteSize * scale,
-                    imageRendering: 'pixelated'
+                    // If it's not a sheet, we might want to just contain the image
+                    ...(!item.isSheet ? { display: 'flex', alignItems: 'center', justifyContent: 'center' } : {})
                 }}
             >
                 <div
                     style={{
-                        position: 'absolute',
+                        ...style,
+                        position: item.isSheet ? 'absolute' : 'relative',
                         top: 0,
                         left: 0,
-                        width: '100%',
-                        height: '100%',
-                        backgroundImage: `url('${sheetUrl}')`,
-                        backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
-                        backgroundSize: `${spriteSize * 16 * scale}px auto`,
-                        imageRendering: 'pixelated'
                     }}
                     onError={(e) => {
-                        // Fallback to emoji if image fails
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerText = item.preview;
-                        e.currentTarget.parentElement!.style.display = 'flex';
-                        e.currentTarget.parentElement!.style.alignItems = 'center';
-                        e.currentTarget.parentElement!.style.justifyContent = 'center';
-                        e.currentTarget.parentElement!.style.fontSize = size === 'xl' ? '4rem' : '2rem';
+                        // Fallback to emoji if image fails/missing
+                        if (item.preview) {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement!.innerText = item.preview;
+                            e.currentTarget.parentElement!.style.display = 'flex';
+                            e.currentTarget.parentElement!.style.alignItems = 'center';
+                            e.currentTarget.parentElement!.style.justifyContent = 'center';
+                            e.currentTarget.parentElement!.style.fontSize = size === 'xl' ? '4rem' : '2rem';
+                        }
                     }}
                 />
             </div>
         );
     };
-
-    // ... inside Shop component render ...
-
-    // [Inside the Purchase Modal]
-    // <SpriteIcon item={selectedItem} size="xl" />
-
-    // [Inside the Grid Item]
-    // <div className="aspect-square flex items-center justify-center p-4">
-    //     <SpriteIcon item={item} size="md" />
-    // </div>
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-blue-950 overflow-hidden">
