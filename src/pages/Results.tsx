@@ -24,7 +24,7 @@ interface Recommendation {
     velocity_score: number;
     match_score: number;
     xp_value: number;
-    category: 'tech' | 'creative' | 'service' | 'biz';
+    niche_id: string; // NicheType key
 }
 
 export function Results() {
@@ -170,7 +170,7 @@ export function Results() {
                 - velocity_score: Number 1-10 (10 = paid today).
                 - match_score: Number between 85 and 99.
                 - xp_value: Number between 300 and 1000.
-                - category: One of "tech", "creative", "service", "biz".
+                - niche_id: One of: "content-creator", "dropshipping", "freelancing", "saas", "appointment-setting", "sales-closing", "cold-calling", "baking", "nail-tech", "hair-stylist", "coaching", "ecommerce", "affiliate-marketing", "tutoring", "photography", "lash-tech", "digital-products", "day-trading", "crypto", "real-estate", "general". Pick the BEST match for the hustle.
                 
                 Do not include markdown. Just raw JSON.
             `;
@@ -278,22 +278,28 @@ export function Results() {
 
     if (!answers && !profile) return null;
 
-    const getCategoryIcon = (cat: string) => {
-        switch (cat) {
-            case 'tech': return <Cpu className="h-8 w-8 text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />;
-            case 'creative': return <Sparkles className="h-8 w-8 text-fuchsia-400 drop-shadow-[0_0_10px_rgba(232,121,249,0.8)]" />;
-            case 'service': return <Users className="h-8 w-8 text-orange-400 drop-shadow-[0_0_10px_rgba(251,146,60,0.8)]" />;
-            default: return <TrendingUp className="h-8 w-8 text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]" />;
-        }
+    const getCategoryIcon = (nicheId: string) => {
+        // Group niches into icon categories
+        const techNiches = ['freelancing', 'saas', 'digital-products'];
+        const creativeNiches = ['content-creator', 'photography'];
+        const serviceNiches = ['appointment-setting', 'sales-closing', 'cold-calling', 'baking', 'nail-tech', 'hair-stylist', 'lash-tech', 'tutoring', 'coaching'];
+        // bizNiches (default): dropshipping, ecommerce, affiliate-marketing, day-trading, crypto, real-estate, general
+
+        if (techNiches.includes(nicheId)) return <Cpu className="h-8 w-8 text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />;
+        if (creativeNiches.includes(nicheId)) return <Sparkles className="h-8 w-8 text-fuchsia-400 drop-shadow-[0_0_10px_rgba(232,121,249,0.8)]" />;
+        if (serviceNiches.includes(nicheId)) return <Users className="h-8 w-8 text-orange-400 drop-shadow-[0_0_10px_rgba(251,146,60,0.8)]" />;
+        return <TrendingUp className="h-8 w-8 text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]" />;
     };
 
-    const getCategoryColor = (cat: string) => {
-        switch (cat) {
-            case 'tech': return 'border-cyan-500/30 bg-cyan-500/5 hover:border-cyan-500/60';
-            case 'creative': return 'border-fuchsia-500/30 bg-fuchsia-500/5 hover:border-fuchsia-500/60';
-            case 'service': return 'border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60';
-            default: return 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/60';
-        }
+    const getCategoryColor = (nicheId: string) => {
+        const techNiches = ['freelancing', 'saas', 'digital-products'];
+        const creativeNiches = ['content-creator', 'photography'];
+        const serviceNiches = ['appointment-setting', 'sales-closing', 'cold-calling', 'baking', 'nail-tech', 'hair-stylist', 'lash-tech', 'tutoring', 'coaching'];
+
+        if (techNiches.includes(nicheId)) return 'border-cyan-500/30 bg-cyan-500/5 hover:border-cyan-500/60';
+        if (creativeNiches.includes(nicheId)) return 'border-fuchsia-500/30 bg-fuchsia-500/5 hover:border-fuchsia-500/60';
+        if (serviceNiches.includes(nicheId)) return 'border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60';
+        return 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/60';
     };
 
     return (
@@ -387,7 +393,7 @@ export function Results() {
                                     animate={{ opacity: 1, x: 0, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     transition={{ delay: idx * 0.1 }}
-                                    className={`relative rounded-3xl p-1 border backdrop-blur-sm transition-all duration-300 group ${getCategoryColor(quest.category)}`}
+                                    className={`relative rounded-3xl p-1 border backdrop-blur-sm transition-all duration-300 group ${getCategoryColor(quest.niche_id)}`}
                                 >
                                     {/* Star Badge for High Match */}
                                     {quest.match_score > 90 && (
@@ -406,7 +412,7 @@ export function Results() {
                                             {/* Left Column: Icon & Score */}
                                             <div className="flex-shrink-0 flex flex-row lg:flex-col items-center gap-4 lg:w-32 text-center">
                                                 <div className="h-20 w-20 rounded-2xl bg-black/40 flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-110 transition-transform duration-300">
-                                                    {getCategoryIcon(quest.category)}
+                                                    {getCategoryIcon(quest.niche_id)}
                                                 </div>
                                                 <div className="relative">
                                                     <svg className="w-24 h-24 transform -rotate-90">

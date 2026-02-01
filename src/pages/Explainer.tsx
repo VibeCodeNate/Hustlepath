@@ -52,22 +52,16 @@ export function Explainer() {
     const [activeWeek, setActiveWeek] = useState(0);
     const [upgrading, setUpgrading] = useState(false);
 
-    // Map category to Niche ID for Dashboard
-    const getNicheId = (category: string): string => {
-        if (!category) return 'general';
-        const map: Record<string, string> = {
-            'tech': 'freelancing', // Approximate mapping
-            'creative': 'content_creation',
-            'biz': 'ecommerce',
-            'service': 'general'
-        };
-        return map[category] || 'general';
+    // Get Niche ID directly from hustle object
+    const getNicheId = (): string => {
+        // The recommendations now include a niche_id field directly from the AI
+        return (hustle as any)?.niche_id || 'general';
     };
 
     const handleUpgrade = async () => {
         setUpgrading(true);
         try {
-            const nicheId = getNicheId(hustle?.category || '');
+            const nicheId = getNicheId();
             const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                 body: {
                     hustleTitle: hustle?.title || 'HustlePath Pro',
@@ -107,13 +101,13 @@ export function Explainer() {
         const key = `hustlepath_saved_${user?.id}`;
         if (hustle && user && profile?.is_pro && !localStorage.getItem(key)) {
             const saveSelection = async () => {
-                const nicheId = getNicheId(hustle.category || '');
+                const nicheId = getNicheId();
 
                 // Update Profile Title
                 if (profile.current_hustle_title !== hustle.title) {
                     await updateProfile({
                         current_hustle_title: hustle.title,
-                        current_hustle_id: hustle.category // Using category as ID for now or title hash
+                        current_hustle_id: (hustle as any).niche_id // Using niche_id directly
                     });
                 }
 
