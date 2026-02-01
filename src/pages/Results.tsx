@@ -34,6 +34,7 @@ export function Results() {
     const { play } = useSound();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [processingUpgrade, setProcessingUpgrade] = useState(false);
+    const [selectedQuest, setSelectedQuest] = useState<Recommendation | null>(null);
 
     // Try to get answers from location state, fallback to sessionStorage, then profile
     const [answers, setAnswers] = useState<any>(() => {
@@ -233,9 +234,22 @@ export function Results() {
     const handleUpgrade = async () => {
         setProcessingUpgrade(true);
         try {
+            // Persist pending hustle if we have one selected (Critical for post-payment redirect)
+            if (selectedQuest && profile?.id) {
+                localStorage.setItem(`hustlepath_pending_hustle_${profile.id}`, JSON.stringify({
+                    title: selectedQuest.title,
+                    nicheId: selectedQuest.niche_id,
+                    difficulty_score: selectedQuest.difficulty_score,
+                    velocity_score: selectedQuest.velocity_score,
+                    income_score: selectedQuest.income_score,
+                    xp_value: selectedQuest.xp_value
+                }));
+            }
+
             const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                 body: {
-                    hustleTitle: 'HustlePath Pro Upgrade',
+                    hustleTitle: selectedQuest?.title || 'HustlePath Pro Upgrade',
+                    nicheId: selectedQuest?.niche_id,
                     return_url: window.location.origin
                 }
             });
@@ -264,6 +278,7 @@ export function Results() {
     const handleStartQuest = (quest: Recommendation) => {
         if (!profile?.is_pro) {
             play('error');
+            setSelectedQuest(quest);
             setShowUpgradeModal(true);
             return;
         }
