@@ -10,7 +10,7 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") as string, {
 // IMPORTANT: This must match the signing secret in your Stripe Dashboard for this webhook endpoint
 const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
     const signature = req.headers.get("Stripe-Signature");
 
     if (!signature || !endpointSecret) {
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
                         throw new Error("User lookup failed");
                     }
 
-                    const user = users.find(u => u.email?.toLowerCase() === customerEmail.toLowerCase());
+                    const user = users.find((u: { email?: string }) => u.email?.toLowerCase() === customerEmail.toLowerCase());
 
                     if (user) {
                         // Extract metadata
