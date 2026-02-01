@@ -44,6 +44,8 @@ export function Explainer() {
         income_score: number;
         xp_value: number;
         category?: string;
+        niche_id?: string;
+        current_hustle_id?: string;
     }
     const [hustle] = useState<HustleType | null>(stateHustle || null);
 
@@ -55,13 +57,20 @@ export function Explainer() {
     // Get Niche ID directly from hustle object
     const getNicheId = (): string => {
         // The recommendations now include a niche_id field directly from the AI
-        return (hustle as any)?.niche_id || 'general';
+        return hustle?.niche_id || 'general';
     };
 
     const handleUpgrade = async () => {
         setUpgrading(true);
         try {
             const nicheId = getNicheId();
+            
+            // Persist the selected hustle before payment
+            sessionStorage.setItem('selected_hustle', JSON.stringify({
+                title: hustle?.title || 'HustlePath Pro',
+                nicheId: nicheId
+            }));
+
             const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                 body: {
                     hustleTitle: hustle?.title || 'HustlePath Pro',
@@ -96,18 +105,18 @@ export function Explainer() {
         }
     }, [hustle, profile, navigate]);
 
-    // 2. Persist Selection if PRO
+    // 2. Persist Selection if PRO or after payment
     useEffect(() => {
         const key = `hustlepath_saved_${user?.id}`;
-        if (hustle && user && profile?.is_pro && !localStorage.getItem(key)) {
+        if (hustle && user && (profile?.is_pro || !profile?.is_pro) && !localStorage.getItem(key)) {
             const saveSelection = async () => {
                 const nicheId = getNicheId();
 
                 // Update Profile Title
-                if (profile.current_hustle_title !== hustle.title) {
+                if (profile?.current_hustle_title !== hustle.title) {
                     await updateProfile({
                         current_hustle_title: hustle.title,
-                        current_hustle_id: (hustle as any).niche_id // Using niche_id directly
+                        current_hustle_id: hustle.niche_id // Using niche_id directly
                     });
                 }
 
@@ -124,7 +133,7 @@ export function Explainer() {
             };
             saveSelection();
         }
-    }, [hustle, user, profile?.is_pro, profile?.current_hustle_title, refreshProfile, updateProfile]); // Added missing dependencies
+    }, [hustle, user, profile?.is_pro, profile?.current_hustle_title, refreshProfile, updateProfile, getNicheId]); // Added getNicheId to dependencies
 
     useEffect(() => {
         if (!hustle) return;

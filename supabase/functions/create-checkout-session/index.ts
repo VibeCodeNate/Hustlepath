@@ -30,6 +30,7 @@ Deno.serve(async (req: Request) => {
         // Parse request body
         let hustleTitle = 'HustlePath Pro';
         let returnUrl = req.headers.get('origin') || 'http://localhost:5173';
+        let nicheId = 'general';
 
         try {
             const body = await req.json();
@@ -39,9 +40,8 @@ Deno.serve(async (req: Request) => {
             if (body.return_url) {
                 returnUrl = body.return_url;
             }
-            // Capture nicheId
             if (body.nicheId) {
-                // We'll store this in a variable or just access it directly in metadata below
+                nicheId = body.nicheId;
             }
         } catch {
             // No body or invalid JSON, use defaults
@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
             cancel_url: `${returnUrl}/explainer`,
             metadata: {
                 hustleTitle,
-                nicheId: (await req.clone().json()).nicheId || 'general', // Get from body
+                nicheId,
                 user_id: user?.id
             },
         });

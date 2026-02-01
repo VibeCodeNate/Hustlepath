@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
@@ -48,7 +48,10 @@ export function Dashboard() {
     const level = progress?.level || 1;
     const streak = progress?.streak_days || 0;
     const prestige = progress?.prestige || 0;
-    const nicheId = progress?.niche_id as NicheType || 'general';
+    // Check for niche_id in profile, then sessionStorage, then fallback to 'general'
+    const nicheId = progress?.niche_id as NicheType || 
+                   JSON.parse(sessionStorage.getItem('selected_hustle') || '{}').nicheId || 
+                   'general';
 
     // Cast profile avatar config to expected type
     const avatarConfig = (profile?.avatar_config as unknown as AvatarConfig) || DEFAULT_AVATAR;
@@ -90,8 +93,18 @@ export function Dashboard() {
 
     const deepDive = HUSTLE_DEEP_DIVES[nicheId] || HUSTLE_DEEP_DIVES['general'];
 
+    const loadHustleBucks = useCallback(async () => {
+        if (!user) return;
+        const { data } = await supabase
+            .from('user_progress')
+            .select('hustle_bucks')
+            .eq('user_id', user.id)
+            .single();
 
-
+        if (data) {
+            setHustleBucks(data.hustle_bucks || 0);
+        }
+    }, [user]);
 
     // Check if can check in (resets at midnight local time)
     useEffect(() => {
@@ -132,20 +145,7 @@ export function Dashboard() {
         loadHustleBucks();
 
         return () => clearInterval(interval);
-    }, [user]);
-
-    const loadHustleBucks = async () => {
-        if (!user) return;
-        const { data } = await supabase
-            .from('user_progress')
-            .select('hustle_bucks')
-            .eq('user_id', user.id)
-            .single();
-
-        if (data) {
-            setHustleBucks(data.hustle_bucks || 0);
-        }
-    };
+    }, [user, loadHustleBucks]);
 
     // Friend search handler
     const handleSearch = async (query: string) => {
@@ -773,6 +773,5 @@ export function Dashboard() {
                 </div>
             </div>
         </div>
-
     );
 }
