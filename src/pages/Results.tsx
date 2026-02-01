@@ -4,7 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { openai } from '../lib/openai';
 import { fireConfetti } from '../lib/confetti';
-import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock, CheckCircle2, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowRight, Trophy, Cpu, TrendingUp, Users, RefreshCw, Star, Target, Coins, Rocket, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
@@ -32,9 +32,7 @@ export function Results() {
     const navigate = useNavigate();
     const { profile, progress, refreshProfile, loading: authLoading } = useAuth(); // Need refreshProfile to update UI after DB writes
     const { play } = useSound();
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [processingUpgrade, setProcessingUpgrade] = useState(false);
-    const [selectedQuest, setSelectedQuest] = useState<Recommendation | null>(null);
+
 
     // Try to get answers from location state, fallback to sessionStorage, then profile
     const [answers, setAnswers] = useState<any>(() => {
@@ -231,38 +229,7 @@ export function Results() {
         }
     };
 
-    const handleUpgrade = async () => {
-        setProcessingUpgrade(true);
-        try {
-            // Persist pending hustle if we have one selected (Critical for post-payment redirect)
-            if (selectedQuest && profile?.id) {
-                localStorage.setItem(`hustlepath_pending_hustle_${profile.id}`, JSON.stringify({
-                    title: selectedQuest.title,
-                    nicheId: selectedQuest.niche_id,
-                    difficulty_score: selectedQuest.difficulty_score,
-                    velocity_score: selectedQuest.velocity_score,
-                    income_score: selectedQuest.income_score,
-                    xp_value: selectedQuest.xp_value
-                }));
-            }
 
-            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                body: {
-                    hustleTitle: selectedQuest?.title || 'HustlePath Pro Upgrade',
-                    nicheId: selectedQuest?.niche_id,
-                    return_url: window.location.origin
-                }
-            });
-
-            if (error) throw error;
-            if (data?.url) window.location.href = data.url;
-            else throw new Error('No checkout URL returned');
-        } catch (err) {
-            console.error('Upgrade error:', err);
-            alert('Failed to start checkout. Please try again or contact support.');
-            setProcessingUpgrade(false);
-        }
-    };
 
     // Safety redirect primarily for guests
     useEffect(() => {
@@ -276,18 +243,11 @@ export function Results() {
 
 
     const handleStartQuest = (quest: Recommendation) => {
-        if (!profile?.is_pro) {
-            play('error');
-            setSelectedQuest(quest);
-            setShowUpgradeModal(true);
-            return;
-        }
-
         play('levelUp');
         fireConfetti();
         setTimeout(() => {
             navigate('/explainer', { state: { hustle: quest, answers } });
-        }, 1500); // Longer delay to hear sound
+        }, 1500);
     };
 
     if (!answers && !profile) return null;
@@ -569,83 +529,6 @@ export function Results() {
                 )}
             </div>
 
-            {/* Upgrade Modal */}
-            <AnimatePresence>
-                {showUpgradeModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-                        onClick={() => setShowUpgradeModal(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="bg-zinc-900 border border-yellow-500/30 rounded-3xl p-8 w-full max-w-md text-center relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500" />
-                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-yellow-500/20 blur-[60px] rounded-full" />
-
-                            <button
-                                onClick={() => setShowUpgradeModal(false)}
-                                className="absolute top-4 right-4 p-2 text-white/50 hover:text-white"
-                            >
-                                <Lock className="w-5 h-5" />
-                            </button>
-
-                            <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
-                                <Trophy className="w-8 h-8 text-yellow-400" />
-                            </div>
-
-                            <h2 className="text-2xl font-bold mb-2">Unlock Full Access</h2>
-                            <p className="text-muted-foreground mb-6">
-                                Ready to start your mission? Upgrade to Pro to access your custom roadmap, community, shop, and more.
-                            </p>
-
-                            <div className="space-y-3 mb-8 text-left bg-black/20 p-4 rounded-xl border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-green-500/20 p-1 rounded-full"><CheckCircle2 className="w-4 h-4 text-green-400" /></div>
-                                    <span className="text-sm">Detailed Weekly Step-by-Step Plans</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-green-500/20 p-1 rounded-full"><CheckCircle2 className="w-4 h-4 text-green-400" /></div>
-                                    <span className="text-sm">Access to Private Community</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-green-500/20 p-1 rounded-full"><CheckCircle2 className="w-4 h-4 text-green-400" /></div>
-                                    <span className="text-sm">Earn Real XP & Rewards</span>
-                                </div>
-                            </div>
-
-                            <Button
-                                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold h-14 text-lg hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-shadow"
-                                onClick={handleUpgrade}
-                                disabled={processingUpgrade}
-                            >
-                                {processingUpgrade ? (
-                                    <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-                                ) : (
-                                    'Upgrade Now - $4.99 / month'
-                                )}
-                            </Button>
-
-                            <button
-                                onClick={() => setShowUpgradeModal(false)}
-                                className="mt-4 text-sm text-white/40 hover:text-white transition-colors"
-                            >
-                                Maybe later
-                            </button>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Additional Import for CheckCircle2 */}
-            <div style={{ display: 'none' }}>
-            </div>
         </div>
     );
 }

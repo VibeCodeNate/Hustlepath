@@ -60,25 +60,13 @@ export function Success() {
 
         hasNavigated.current = true;
 
-        // Check for pending hustle in localStorage using user.id (consistent with Explainer.tsx)
-        const pendingHustleKey = user ? `hustlepath_pending_hustle_${user.id}` : null;
-        const pendingHustleData = pendingHustleKey ? localStorage.getItem(pendingHustleKey) : null;
-
-        if (pendingHustleData) {
-            try {
-                const hustle = JSON.parse(pendingHustleData);
-                // Clear the pending hustle from localStorage
-                localStorage.removeItem(pendingHustleKey!);
-                // Redirect to explainer with the hustle state
-                navigate('/explainer', { state: { hustle }, replace: true });
-            } catch (e) {
-                console.error('Failed to parse pending hustle:', e);
-                navigate('/dashboard', { replace: true });
-            }
-        } else {
-            // No pending hustle, go to dashboard
-            navigate('/dashboard', { replace: true });
+        // Clear any pending hustle data (no longer needed)
+        if (user) {
+            localStorage.removeItem(`hustlepath_pending_hustle_${user.id}`);
         }
+
+        // Always redirect to Dashboard after successful payment
+        navigate('/dashboard', { replace: true });
     }, [profile?.is_pro, user, navigate]);
 
     return (

@@ -26,6 +26,13 @@ export function Dashboard() {
     const navigate = useNavigate();
     const { user, profile, progress, refreshProfile } = useAuth();
     const { play } = useSound();
+
+    // Pro-only gate: redirect non-Pro users to Explainer
+    useEffect(() => {
+        if (profile && !profile.is_pro) {
+            navigate('/explainer', { replace: true });
+        }
+    }, [profile, navigate]);
     const [checkingIn, setCheckingIn] = useState(false);
     const [canCheckIn, setCanCheckIn] = useState(true);
     const [showQuoteModal, setShowQuoteModal] = useState(false);

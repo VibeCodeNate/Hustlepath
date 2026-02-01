@@ -306,21 +306,37 @@ export function Explainer() {
                         </div>
                     </div>
 
-                    {/* PRO CONTENT UNLOCKED (or CTA if not pro) */}
-                    {!profile?.is_pro ? (
-                        <div className="relative rounded-3xl border border-white/10 bg-black/40 overflow-hidden mb-20 min-h-[400px]">
-                            {/* Blur Layer */}
-                            <div className="absolute inset-0 backdrop-blur-md bg-black/60 z-10 flex flex-col items-center justify-center p-8 text-center">
-                                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-6">
-                                    <Lock className="w-8 h-8 text-white/50" />
+                    {/* CTA Section - Different for Pro vs Free */}
+                    <div className="bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-3xl p-8 mb-20 text-center">
+                        {profile?.is_pro ? (
+                            <>
+                                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle2 className="w-8 h-8 text-primary" />
                                 </div>
-                                <h3 className="text-3xl font-bold text-white mb-4">Unlock Full Mission Data</h3>
-                                <p className="text-xl text-white/60 max-w-md mb-8">
-                                    Get access to advanced growth tactics, pro tools list, and community support to accelerate your earnings.
+                                <h3 className="text-2xl font-bold text-white mb-2">You're Ready!</h3>
+                                <p className="text-white/60 mb-8 max-w-md mx-auto">
+                                    Your roadmap is set. Head to the Dashboard to access the full 12-week plan, community, and more.
                                 </p>
                                 <Button
                                     size="lg"
-                                    className="text-lg px-12 py-6 shadow-[0_0_30px_rgba(190,242,100,0.3)]"
+                                    className="text-lg px-12 py-6"
+                                    onClick={() => navigate('/dashboard')}
+                                >
+                                    Go to Dashboard <ArrowRight className="ml-2" />
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <Lock className="w-8 h-8 text-white/50" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Unlock Your Full Journey</h3>
+                                <p className="text-white/60 mb-8 max-w-md mx-auto">
+                                    Upgrade to Pro to access the Dashboard, full 12-week roadmap, community, and earn real XP & rewards.
+                                </p>
+                                <Button
+                                    size="lg"
+                                    className="text-lg px-12 py-6 shadow-[0_0_30px_rgba(190,242,100,0.3)] bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold hover:shadow-[0_0_40px_rgba(234,179,8,0.4)]"
                                     onClick={handleUpgrade}
                                     disabled={upgrading}
                                 >
@@ -330,67 +346,13 @@ export function Explainer() {
                                         </>
                                     ) : (
                                         <>
-                                            Upgrade to Pro <ArrowRight className="ml-2" />
+                                            Upgrade to Pro - $4.99/mo <ArrowRight className="ml-2" />
                                         </>
                                     )}
                                 </Button>
-                            </div>
-
-                            {/* Fake Content Behind Blur */}
-                            <div className="p-8 opacity-20 pointer-events-none select-none min-h-[350px]">
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <div>
-                                        <h3 className="text-2xl font-bold mb-4">Advanced Tactics</h3>
-                                        <div className="space-y-4">
-                                            <div className="h-4 bg-white/20 rounded w-3/4"></div>
-                                            <div className="h-4 bg-white/20 rounded w-full"></div>
-                                            <div className="h-4 bg-white/20 rounded w-5/6"></div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-bold mb-4">Pro Tools List</h3>
-                                        <div className="space-y-4">
-                                            <div className="h-4 bg-white/20 rounded w-1/2"></div>
-                                            <div className="h-4 bg-white/20 rounded w-2/3"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        /* PRO CONTENT */
-                        <div className="bg-black/40 border border-primary/20 rounded-3xl p-8 mb-20">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="p-2 bg-primary/20 rounded-lg"><CheckCircle2 className="text-primary w-6 h-6" /></div>
-                                <h2 className="text-2xl font-bold">Pro Access: Advanced Intel</h2>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div>
-                                    <h3 className="text-xl font-bold text-white mb-4">Growth Tactics</h3>
-                                    <div className="space-y-4 text-white/70">
-                                        <p>• Leverage short-form video (TikTok/Reels) to drive organic traffic.</p>
-                                        <p>• Use cold outreach scripts (available in Resources) to land first clients.</p>
-                                        <p>• Bundle your services to increase average order value by 30%.</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-white mb-4">Recommended Tools</h3>
-                                    <div className="space-y-4 text-white/70">
-                                        <p>• <strong>Notion</strong> - For project management.</p>
-                                        <p>• <strong>Canva</strong> - For quick design assets.</p>
-                                        <p>• <strong>Stripe</strong> - For payments (integrated).</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 pt-8 border-t border-white/10 text-center">
-                                <Button size="lg" className="w-full md:w-auto" onClick={() => navigate('/dashboard')}>
-                                    Accept Mission & Go to Dashboard
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
+                    </div>
                 </div>
             ) : null}
         </div>
