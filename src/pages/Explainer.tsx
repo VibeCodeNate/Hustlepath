@@ -34,8 +34,17 @@ export function Explainer() {
     const { user, profile, updateProfile, refreshProfile } = useAuth();
 
     // Fallback: If no state, maybe we can recover from profile?
+    // Fallback: If no state, maybe we can recover from profile?
     const stateHustle = location.state?.hustle;
     const stateAnswers = location.state?.answers;
+
+    // Helper to recover from localStorage if state is missing
+    const getStoredData = (key: string) => {
+        try {
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : null;
+        } catch { return null; }
+    };
 
     interface HustleType {
         title: string;
@@ -47,7 +56,11 @@ export function Explainer() {
         niche_id?: string;
         current_hustle_id?: string;
     }
-    const [hustle] = useState<HustleType | null>(stateHustle || null);
+
+    // Initialize state from Location OR LocalStorage
+    const [hustle] = useState<HustleType | null>(() =>
+        stateHustle || getStoredData('hustlepath_selected_quest')
+    );
 
     const [loading, setLoading] = useState(true);
     const [content, setContent] = useState<ExplainerContent | null>(null);
@@ -146,7 +159,12 @@ export function Explainer() {
 
         const fetchDetails = async () => {
             try {
-                const answers = stateAnswers || profile?.quiz_answers || {};
+                // Recover answers from State -> Profile -> LocalStorage
+                const answers = stateAnswers ||
+                    profile?.quiz_answers ||
+                    getStoredData('hustlepath_answers') ||
+                    {};
+
                 const prompt = `
                     Generate a specific "Mission Brief" for this Side Hustle Quest: "${hustle.title}".
                     

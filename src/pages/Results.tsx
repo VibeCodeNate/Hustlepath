@@ -245,9 +245,16 @@ export function Results() {
     const handleStartQuest = (quest: Recommendation) => {
         play('levelUp');
         fireConfetti();
+
+        // Backup to localStorage in case navigation state is lost
+        localStorage.setItem('hustlepath_selected_quest', JSON.stringify(quest));
+        if (answers) {
+            localStorage.setItem('hustlepath_answers', JSON.stringify(answers));
+        }
+
         setTimeout(() => {
             navigate('/explainer', { state: { hustle: quest, answers } });
-        }, 1500);
+        }, 800);
     };
 
     if (!answers && !profile) return null;
@@ -512,6 +519,7 @@ export function Results() {
                                                 </div>
 
                                                 <Button
+                                                    type="button"
                                                     className="w-full h-14 text-lg font-bold shadow-[0_0_20px_rgba(190,242,100,0.2)] hover:shadow-[0_0_30px_rgba(190,242,100,0.4)] transition-all whitespace-normal leading-tight"
                                                     onClick={() => handleStartQuest(quest)}
                                                 >
