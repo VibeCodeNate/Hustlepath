@@ -14,13 +14,17 @@ export interface ShopItem {
     src: string; // Path relative to /assets/
     spriteIndex: number; // For sheets
     isSheet: boolean;
+    sheetCols: number; // Number of columns in the sprite sheet
+    baseSize?: number; // Base pixel size of the sprite (default 32)
     preview?: string; // Optional emoji fallback
 }
 
+// Price tiers by rarity
 
 
 export const SHOP_CATALOG: ShopItem[] = [
     // --- ROGUES (Characters) ---
+    // Rogues sheet is 224px wide / 32px = 7 columns
     {
         id: 'rogue_knight',
         name: 'Iron Knight',
@@ -29,8 +33,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 100,
         description: 'A sturdy warrior ready for battle.',
         src: 'shop/rogues.png',
-        spriteIndex: 0,
-        isSheet: true
+        spriteIndex: 7, // 2nd Row (index 7 if 7 cols) - 2.a Knight
+        isSheet: true,
+        sheetCols: 7
     },
     {
         id: 'rogue_mage',
@@ -40,8 +45,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 300,
         description: 'Wields the power of the arcane.',
         src: 'shop/rogues.png',
-        spriteIndex: 1,
-        isSheet: true
+        spriteIndex: 29, // 5.b Male Wizard
+        isSheet: true,
+        sheetCols: 7
     },
     {
         id: 'rogue_ranger',
@@ -51,8 +57,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 100,
         description: 'Expert tracker and marksman.',
         src: 'shop/rogues.png',
-        spriteIndex: 2,
-        isSheet: true
+        spriteIndex: 2, // 1.c Ranger
+        isSheet: true,
+        sheetCols: 7
     },
     {
         id: 'rogue_thief',
@@ -62,8 +69,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 300,
         description: 'Silent and deadly.',
         src: 'shop/rogues.png',
-        spriteIndex: 3,
-        isSheet: true
+        spriteIndex: 3, // 1.d Rogue
+        isSheet: true,
+        sheetCols: 7
     },
     {
         id: 'rogue_cleric',
@@ -73,8 +81,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 100,
         description: 'Healer of wounds and spirit.',
         src: 'shop/rogues.png',
-        spriteIndex: 4,
-        isSheet: true
+        spriteIndex: 14, // 3.a Monk/Priest
+        isSheet: true,
+        sheetCols: 7
     },
     {
         id: 'rogue_paladin',
@@ -84,8 +93,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 750,
         description: 'A champion of light and justice.',
         src: 'shop/rogues.png',
-        spriteIndex: 6,
-        isSheet: true
+        spriteIndex: 11, // 2.e Shield Knight
+        isSheet: true,
+        sheetCols: 7
     },
     {
         id: 'rogue_dark_knight',
@@ -95,11 +105,13 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 750,
         description: 'Embraced the darkness to find power.',
         src: 'shop/rogues.png',
-        spriteIndex: 9,
-        isSheet: true
+        spriteIndex: 33, // 5.f
+        isSheet: true,
+        sheetCols: 7
     },
 
     // --- MONSTERS ---
+    // Monsters sheet is 384px wide / 32px = 12 columns
     {
         id: 'monster_slime',
         name: 'Green Slime',
@@ -108,8 +120,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 50,
         description: 'A sticky little nuisance.',
         src: 'shop/monsters.png',
-        spriteIndex: 0,
-        isSheet: true
+        spriteIndex: 24, // 3.a Small Slime
+        isSheet: true,
+        sheetCols: 12
     },
     {
         id: 'monster_bat',
@@ -119,8 +132,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 50,
         description: 'Screeches in the dark.',
         src: 'shop/monsters.png',
-        spriteIndex: 1,
-        isSheet: true
+        spriteIndex: 78,
+        isSheet: true,
+        sheetCols: 12
     },
     {
         id: 'monster_skeleton',
@@ -130,8 +144,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 100,
         description: 'Rattled but ready to fight.',
         src: 'shop/monsters.png',
-        spriteIndex: 2,
-        isSheet: true
+        spriteIndex: 48, // 5.a Skeleton
+        isSheet: true,
+        sheetCols: 12
     },
     {
         id: 'monster_goblin',
@@ -141,8 +156,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 100,
         description: 'Watch your pockets!',
         src: 'shop/monsters.png',
-        spriteIndex: 3,
-        isSheet: true
+        spriteIndex: 2, // 1.c Goblin
+        isSheet: true,
+        sheetCols: 12
     },
     {
         id: 'monster_orc',
@@ -152,11 +168,13 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 300,
         description: 'Big, strong, and angry.',
         src: 'shop/monsters.png',
-        spriteIndex: 5,
-        isSheet: true
+        spriteIndex: 0, // 1.a Orc
+        isSheet: true,
+        sheetCols: 12
     },
 
     // --- ITEMS ---
+    // Items sheet is 352px wide / 32px = 11 columns
     {
         id: 'item_potion_red',
         name: 'Health Potion',
@@ -165,8 +183,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 50,
         description: 'Restores vitality.',
         src: 'shop/items.png',
-        spriteIndex: 0,
-        isSheet: true
+        spriteIndex: 210, // 20.b Red Potion
+        isSheet: true,
+        sheetCols: 11
     },
     {
         id: 'item_sword',
@@ -176,8 +195,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 150,
         description: 'A reliable blade.',
         src: 'shop/items.png',
-        spriteIndex: 1,
-        isSheet: true
+        spriteIndex: 1, // 1.b Short Sword
+        isSheet: true,
+        sheetCols: 11
     },
     {
         id: 'item_shield',
@@ -187,8 +207,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 100,
         description: 'Better than nothing.',
         src: 'shop/items.png',
-        spriteIndex: 16, // Guessing index for next row
-        isSheet: true
+        spriteIndex: 121, // 12.a Buckler
+        isSheet: true,
+        sheetCols: 11
     },
     {
         id: 'item_gem_blue',
@@ -198,11 +219,13 @@ export const SHOP_CATALOG: ShopItem[] = [
         price: 500,
         description: 'A precious blue gem.',
         src: 'shop/items.png',
-        spriteIndex: 35,
-        isSheet: true
+        spriteIndex: 191, // Gem/Ring approximation
+        isSheet: true,
+        sheetCols: 11
     },
 
     // --- DINOS ---
+    // Dino sheets are 576x24. Base size 24. 24 columns.
     {
         id: 'dino_vita',
         name: 'Vita The Dino',
@@ -212,7 +235,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         description: 'A friendly green dinosaur.',
         src: 'shop/dino_vita.png',
         spriteIndex: 0,
-        isSheet: true
+        isSheet: true,
+        sheetCols: 24,
+        baseSize: 24
     },
     {
         id: 'dino_mort',
@@ -223,7 +248,9 @@ export const SHOP_CATALOG: ShopItem[] = [
         description: 'A feisty red dinosaur.',
         src: 'shop/dino_mort.png',
         spriteIndex: 0,
-        isSheet: true
+        isSheet: true,
+        sheetCols: 24,
+        baseSize: 24
     }
 ];
 
