@@ -47,17 +47,36 @@ Deno.serve(async (req) => {
 
                 if (userId) {
                     console.log(`Upgrading user by ID: ${userId}`);
+
+                    // Extract metadata
+                    const hustleTitle = session.metadata?.hustleTitle;
+                    const nicheId = session.metadata?.nicheId;
+
+                    // Update Profile
                     const { error: updateError } = await supabaseAdmin
                         .from("profiles")
                         .update({
                             is_pro: true,
                             stripe_customer_id: customerId,
-                            pro_since: new Date().toISOString()
+                            pro_since: new Date().toISOString(),
+                            current_hustle_title: hustleTitle || undefined // Optional update
                         })
                         .eq("id", userId);
 
                     if (updateError) console.error("Profile update failed:", updateError);
                     else console.log(`User ${userId} upgraded to Pro!`);
+
+                    // Update User Progress with Niche
+                    if (nicheId) {
+                        const { error: progressError } = await supabaseAdmin
+                            .from("user_progress")
+                            .update({ niche_id: nicheId })
+                            .eq("user_id", userId);
+
+                        if (progressError) console.error("Progress update failed:", progressError);
+                        else console.log(`User ${userId} niche set to: ${nicheId}`);
+                    }
+
 
                 } else if (customerEmail) {
                     // 2. Fallback: Find user by email
@@ -73,17 +92,33 @@ Deno.serve(async (req) => {
                     const user = users.find(u => u.email?.toLowerCase() === customerEmail.toLowerCase());
 
                     if (user) {
+                        // Extract metadata
+                        const hustleTitle = session.metadata?.hustleTitle;
+                        const nicheId = session.metadata?.nicheId;
+
                         const { error: updateError } = await supabaseAdmin
                             .from("profiles")
                             .update({
                                 is_pro: true,
                                 stripe_customer_id: customerId,
-                                pro_since: new Date().toISOString()
+                                pro_since: new Date().toISOString(),
+                                current_hustle_title: hustleTitle || undefined
                             })
                             .eq("id", user.id);
 
                         if (updateError) console.error("Profile update failed:", updateError);
                         else console.log(`User ${user.id} upgraded to Pro!`);
+
+                        // Update User Progress with Niche
+                        if (nicheId) {
+                            const { error: progressError } = await supabaseAdmin
+                                .from("user_progress")
+                                .update({ niche_id: nicheId })
+                                .eq("user_id", user.id);
+
+                            if (progressError) console.error("Progress update failed:", progressError);
+                            else console.log(`User ${user.id} niche set to: ${nicheId}`);
+                        }
                     } else {
                         console.warn(`No user found for email: ${customerEmail}`);
                     }

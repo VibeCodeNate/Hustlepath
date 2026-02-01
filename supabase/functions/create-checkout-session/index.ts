@@ -38,6 +38,10 @@ Deno.serve(async (req: Request) => {
             if (body.return_url) {
                 returnUrl = body.return_url;
             }
+            // Capture nicheId
+            if (body.nicheId) {
+                // We'll store this in a variable or just access it directly in metadata below
+            }
         } catch {
             // No body or invalid JSON, use defaults
         }
@@ -85,7 +89,8 @@ Deno.serve(async (req: Request) => {
             cancel_url: `${returnUrl}/explainer`,
             metadata: {
                 hustleTitle,
-                user_id: user?.id // PASS USER ID
+                nicheId: (await req.clone().json()).nicheId || 'general', // Get from body
+                user_id: user?.id
             },
         });
 

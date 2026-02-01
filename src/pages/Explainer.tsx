@@ -67,8 +67,12 @@ export function Explainer() {
     const handleUpgrade = async () => {
         setUpgrading(true);
         try {
+            const nicheId = getNicheId(hustle?.category || '');
             const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                body: { hustleTitle: hustle?.title || 'HustlePath Pro' }
+                body: {
+                    hustleTitle: hustle?.title || 'HustlePath Pro',
+                    nicheId: nicheId
+                }
             });
 
             if (error) throw error;
