@@ -1,12 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './Button';
-import { Sparkles, User, LogOut, Settings, ShoppingBag, Coins, Zap, ArrowRight } from 'lucide-react';
+import { Sparkles, User, LogOut, Settings, ShoppingBag, Coins, Zap, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function Navbar() {
-    const { user, profile, signOut } = useAuth();
+    const { user, profile, signOut, loading } = useAuth();
     const navigate = useNavigate();
     const [hustleBucks, setHustleBucks] = useState(0);
 
@@ -49,7 +49,11 @@ export function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {user ? (
+                    {loading ? (
+                        <div className="flex items-center gap-4 h-9">
+                            <Loader2 className="h-5 w-5 animate-spin text-white/20" />
+                        </div>
+                    ) : user ? (
                         <>
                             {/* PRO ONLY: Shop & Coins & Profile */}
                             {profile?.is_pro ? (
