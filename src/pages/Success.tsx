@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
@@ -17,8 +17,9 @@ export function Success() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const sessionId = searchParams.get('session_id');
+    const hasNavigated = useRef(false);
 
-    const { refreshProfile, profile } = useAuth();
+    const { refreshProfile, profile, user } = useAuth();
 
     useEffect(() => {
         // Fire confetti on mount
@@ -30,45 +31,55 @@ export function Success() {
             await refreshProfile();
         };
 
-        // Poll for status update (webhook might delay 1-3s)
+        // Start polling immediately
         checkProStatus();
-        const interval = setInterval(() => {
-            if (!profile?.is_pro) {
-                checkProStatus();
-            } else {
+
+        const interval = setInterval(async () => {
+            // Prevent navigation if we've already done it
+            if (hasNavigated.current) {
                 clearInterval(interval);
-
-                // Check for pending hustle in localStorage
-                const pendingHustleKey = `hustlepath_pending_hustle_${profile.id}`;
-                const pendingHustleData = localStorage.getItem(pendingHustleKey);
-
-                if (pendingHustleData) {
-                    try {
-                        const hustle = JSON.parse(pendingHustleData);
-                        // Clear the pending hustle from localStorage
-                        localStorage.removeItem(pendingHustleKey);
-                        // Redirect to explainer with the hustle state
-                        navigate('/explainer', { state: { hustle } });
-                    } catch (e) {
-                        console.error('Failed to parse pending hustle:', e);
-                        navigate('/dashboard');
-                    }
-                } else {
-                    // No pending hustle, go to dashboard
-                    navigate('/dashboard');
-                }
+                return;
             }
+
+            await checkProStatus();
         }, 2000);
 
-        // Stop polling after 15s to save resources
-        const stopTimer = setTimeout(() => clearInterval(interval), 15000);
+        // Stop polling after 20s to save resources
+        const stopTimer = setTimeout(() => clearInterval(interval), 20000);
 
         return () => {
             clearTimeout(timer);
             clearInterval(interval);
             clearTimeout(stopTimer);
         };
-    }, [profile?.is_pro, profile?.id, navigate, refreshProfile]);
+    }, [refreshProfile]);
+
+    // Separate effect for handling navigation when is_pro becomes true
+    useEffect(() => {
+        if (!profile?.is_pro || hasNavigated.current) return;
+
+        hasNavigated.current = true;
+
+        // Check for pending hustle in localStorage using user.id (consistent with Explainer.tsx)
+        const pendingHustleKey = user ? `hustlepath_pending_hustle_${user.id}` : null;
+        const pendingHustleData = pendingHustleKey ? localStorage.getItem(pendingHustleKey) : null;
+
+        if (pendingHustleData) {
+            try {
+                const hustle = JSON.parse(pendingHustleData);
+                // Clear the pending hustle from localStorage
+                localStorage.removeItem(pendingHustleKey!);
+                // Redirect to explainer with the hustle state
+                navigate('/explainer', { state: { hustle }, replace: true });
+            } catch (e) {
+                console.error('Failed to parse pending hustle:', e);
+                navigate('/dashboard', { replace: true });
+            }
+        } else {
+            // No pending hustle, go to dashboard
+            navigate('/dashboard', { replace: true });
+        }
+    }, [profile?.is_pro, user, navigate]);
 
     return (
         <div className="min-h-screen bg-background pb-20">

@@ -60,12 +60,13 @@ Deno.serve(async (req: Request) => {
                             is_pro: true,
                             stripe_customer_id: customerId,
                             pro_since: new Date().toISOString(),
-                            current_hustle_title: hustleTitle || undefined // Optional update
+                            current_hustle_title: hustleTitle || undefined,
+                            current_hustle_id: nicheId || undefined
                         })
                         .eq("id", userId);
 
                     if (updateError) console.error("Profile update failed:", updateError);
-                    else console.log(`User ${userId} upgraded to Pro!`);
+                    else console.log(`User ${userId} upgraded to Pro! Hustle: ${hustleTitle}, Niche: ${nicheId}`);
 
                     // Update User Progress with Niche
                     if (nicheId) {
@@ -103,12 +104,13 @@ Deno.serve(async (req: Request) => {
                                 is_pro: true,
                                 stripe_customer_id: customerId,
                                 pro_since: new Date().toISOString(),
-                                current_hustle_title: hustleTitle || undefined
+                                current_hustle_title: hustleTitle || undefined,
+                                current_hustle_id: nicheId || undefined
                             })
                             .eq("id", user.id);
 
                         if (updateError) console.error("Profile update failed:", updateError);
-                        else console.log(`User ${user.id} upgraded to Pro!`);
+                        else console.log(`User ${user.id} upgraded to Pro! Hustle: ${hustleTitle}, Niche: ${nicheId}`);
 
                         // Update User Progress with Niche
                         if (nicheId) {

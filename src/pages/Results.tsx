@@ -71,26 +71,25 @@ export function Results() {
         if (!profile) return;
 
         // 1. Check if we already have generated results in DB
-        // 1. Check if we already have generated results in DB
         if (progress?.generated_hustles && progress.generated_hustles.length > 0) {
-            console.log("Loading persisted results from DB");
-            setRecommendations(progress.generated_hustles);
-
-            // Initialize excluded titles with the current ones so reroll doesn't repeat them
-            setExcludedTitles(progress.generated_hustles.map((h: any) => h.title));
-
+            // Only update if recommendations is null/empty (not already set)
+            if (!recommendations || recommendations.length === 0) {
+                console.log("Loading persisted results from DB");
+                setRecommendations(progress.generated_hustles);
+                setExcludedTitles(progress.generated_hustles.map((h: any) => h.title));
+            }
             setLoading(false);
             return;
         }
 
         // 2. If no persisted results, generate them (First run)
-        // Ensure we have answers
+        // Ensure we have answers AND we haven't generated yet
         const answersToUse = answers || profile.quiz_answers;
         if (answersToUse && loading && !recommendations) {
             generateAndSaveResults(answersToUse);
         }
 
-    }, [profile, answers]);
+    }, [authLoading, profile?.id, progress?.generated_hustles, answers]); // Use profile.id instead of profile object
 
     const generateAndSaveResults = async (answersData: any, isReroll = false) => {
         setLoading(true);
