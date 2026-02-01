@@ -64,12 +64,18 @@ export function Explainer() {
         setUpgrading(true);
         try {
             const nicheId = getNicheId();
-            
-            // Persist the selected hustle before payment
-            sessionStorage.setItem('selected_hustle', JSON.stringify({
-                title: hustle?.title || 'HustlePath Pro',
-                nicheId: nicheId
-            }));
+
+            // Persist the selected hustle to localStorage (survives Stripe redirect)
+            if (user) {
+                localStorage.setItem(`hustlepath_pending_hustle_${user.id}`, JSON.stringify({
+                    title: hustle?.title || 'HustlePath Pro',
+                    nicheId: nicheId,
+                    difficulty_score: hustle?.difficulty_score,
+                    velocity_score: hustle?.velocity_score,
+                    income_score: hustle?.income_score,
+                    xp_value: hustle?.xp_value
+                }));
+            }
 
             const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                 body: {
@@ -105,35 +111,35 @@ export function Explainer() {
         }
     }, [hustle, profile, navigate]);
 
-    // 2. Persist Selection if PRO or after payment
+    // 2. Persist Selection IMMEDIATELY on mount (before payment)
+    // This ensures the database always has the user's chosen hustle
     useEffect(() => {
-        const key = `hustlepath_saved_${user?.id}`;
-        if (hustle && user && (profile?.is_pro || !profile?.is_pro) && !localStorage.getItem(key)) {
-            const saveSelection = async () => {
-                const nicheId = getNicheId();
+        if (!hustle || !user) return;
 
-                // Update Profile Title
-                if (profile?.current_hustle_title !== hustle.title) {
-                    await updateProfile({
-                        current_hustle_title: hustle.title,
-                        current_hustle_id: hustle.niche_id // Using niche_id directly
-                    });
-                }
+        const saveSelection = async () => {
+            const nicheId = getNicheId();
 
-                // Update Progress Niche (Direct DB call as updateProfile doesn't touch progress)
-                const { error } = await supabase
-                    .from('user_progress')
-                    .update({ niche_id: nicheId })
-                    .eq('user_id', user.id);
+            // Update Profile with hustle title and ID
+            if (profile?.current_hustle_title !== hustle.title || profile?.current_hustle_id !== nicheId) {
+                await updateProfile({
+                    current_hustle_title: hustle.title,
+                    current_hustle_id: nicheId
+                });
+            }
 
-                if (!error) {
-                    localStorage.setItem(key, 'true'); // Prevent excessive writes
-                    refreshProfile();
-                }
-            };
-            saveSelection();
-        }
-    }, [hustle, user, profile?.is_pro, profile?.current_hustle_title, refreshProfile, updateProfile, getNicheId]); // Added getNicheId to dependencies
+            // Update Progress Niche (Direct DB call as updateProfile doesn't touch progress)
+            const { error } = await supabase
+                .from('user_progress')
+                .update({ niche_id: nicheId })
+                .eq('user_id', user.id);
+
+            if (!error) {
+                refreshProfile();
+            }
+        };
+
+        saveSelection();
+    }, [hustle, user]); // Run once when hustle and user are available
 
     useEffect(() => {
         if (!hustle) return;

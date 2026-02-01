@@ -48,10 +48,8 @@ export function Dashboard() {
     const level = progress?.level || 1;
     const streak = progress?.streak_days || 0;
     const prestige = progress?.prestige || 0;
-    // Check for niche_id in profile, then sessionStorage, then fallback to 'general'
-    const nicheId = progress?.niche_id as NicheType || 
-                   JSON.parse(sessionStorage.getItem('selected_hustle') || '{}').nicheId || 
-                   'general';
+    // Get nicheId from profile (set during hustle selection) or progress, fallback to 'general'
+    const nicheId = (profile?.current_hustle_id || progress?.niche_id || 'general') as NicheType;
 
     // Cast profile avatar config to expected type
     const avatarConfig = (profile?.avatar_config as unknown as AvatarConfig) || DEFAULT_AVATAR;
@@ -507,7 +505,7 @@ export function Dashboard() {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold text-white">Your Hustle Deep Dive</h2>
-                                <p className="text-muted-foreground">Mastering the art of {deepDive.title}</p>
+                                <p className="text-muted-foreground">Mastering the art of {profile?.current_hustle_title || deepDive.title}</p>
                             </div>
                             {!profile?.is_pro && (
                                 <div className="ml-auto">

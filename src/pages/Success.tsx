@@ -30,26 +30,45 @@ export function Success() {
             await refreshProfile();
         };
 
-    // Poll for status update (webhook might delay 1-3s)
-    checkProStatus();
-    const interval = setInterval(() => {
-        if (!profile?.is_pro) {
-            checkProStatus();
-        } else {
-            clearInterval(interval);
-            navigate('/'); // Redirect to home after successful payment verification
-        }
-    }, 2000);
+        // Poll for status update (webhook might delay 1-3s)
+        checkProStatus();
+        const interval = setInterval(() => {
+            if (!profile?.is_pro) {
+                checkProStatus();
+            } else {
+                clearInterval(interval);
 
-    // Stop polling after 15s to save resources
-    const stopTimer = setTimeout(() => clearInterval(interval), 15000);
+                // Check for pending hustle in localStorage
+                const pendingHustleKey = `hustlepath_pending_hustle_${profile.id}`;
+                const pendingHustleData = localStorage.getItem(pendingHustleKey);
+
+                if (pendingHustleData) {
+                    try {
+                        const hustle = JSON.parse(pendingHustleData);
+                        // Clear the pending hustle from localStorage
+                        localStorage.removeItem(pendingHustleKey);
+                        // Redirect to explainer with the hustle state
+                        navigate('/explainer', { state: { hustle } });
+                    } catch (e) {
+                        console.error('Failed to parse pending hustle:', e);
+                        navigate('/dashboard');
+                    }
+                } else {
+                    // No pending hustle, go to dashboard
+                    navigate('/dashboard');
+                }
+            }
+        }, 2000);
+
+        // Stop polling after 15s to save resources
+        const stopTimer = setTimeout(() => clearInterval(interval), 15000);
 
         return () => {
             clearTimeout(timer);
             clearInterval(interval);
             clearTimeout(stopTimer);
         };
-    }, [profile?.is_pro, navigate, refreshProfile]);
+    }, [profile?.is_pro, profile?.id, navigate, refreshProfile]);
 
     return (
         <div className="min-h-screen bg-background pb-20">
