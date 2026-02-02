@@ -108,21 +108,8 @@ export function Explainer() {
         }
     };
 
-    // 1. Recover state if missing (Refresh handling)
-    useEffect(() => {
-        if (!hustle && profile?.current_hustle_title) {
-            // If we have a title but no full object, we might need to "fake" the object 
-            // or fetch it. For now, let's redirect to specific roadmap if PRO
-            if (profile.is_pro) {
-                navigate('/roadmap');
-                return;
-            }
-            // Otherwise redirect to results to pick again
-            navigate('/results');
-        } else if (!hustle && !profile) {
-            navigate('/assessment');
-        }
-    }, [hustle, profile, navigate]);
+    // NOTE: Removed aggressive redirect logic that was causing loops.
+    // If hustle is missing, we simply won't render anything (handled by `if (!hustle) return null` below).
 
     // 2. Persist Selection IMMEDIATELY on mount (before payment)
     // This ensures the database always has the user's chosen hustle
