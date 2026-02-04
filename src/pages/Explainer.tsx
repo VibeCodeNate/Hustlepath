@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
@@ -68,10 +68,10 @@ export function Explainer() {
     const [upgrading, setUpgrading] = useState(false);
 
     // Get Niche ID directly from hustle object
-    const getNicheId = (): string => {
+    const getNicheId = useCallback((): string => {
         // The recommendations now include a niche_id field directly from the AI
         return hustle?.niche_id || 'general';
-    };
+    }, [hustle?.niche_id]);
 
     const handleUpgrade = async () => {
         setUpgrading(true);
@@ -139,7 +139,17 @@ export function Explainer() {
         };
 
         saveSelection();
-    }, [hustle, user]); // Run once when hustle and user are available
+        // NOTE: Removed automatic redirect to /roadmap for free users that was causing a loop.
+        // Free users should stay on Explainer and see the upgrade CTA.
+    }, [
+        hustle,
+        user,
+        profile?.current_hustle_title,
+        profile?.current_hustle_id,
+        getNicheId,
+        updateProfile,
+        refreshProfile
+    ]);
 
     useEffect(() => {
         if (!hustle) return;

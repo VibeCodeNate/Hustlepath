@@ -29,7 +29,7 @@ export function Dashboard() {
 
     // Pro-only gate: redirect non-Pro users to Explainer
     useEffect(() => {
-        if (profile && !profile.is_pro) {
+        if (profile && !profile.is_pro && location.pathname !== '/explainer') {
             navigate('/explainer', { replace: true });
         }
     }, [profile, navigate]);
